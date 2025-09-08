@@ -97,13 +97,18 @@ class USDViewerHTTPTester:
             return False
     
     def test_move_request_valid(self):
-        """Test valid move request."""
+        """Test valid move request with full transform parameters."""
         test_data = {
             "sdfPath": "/World/TestCube",
             "x": 2.0,
             "y": 1.0,
             "z": 0.5,
-            "rotateZ": 30.0
+            "rotateX": 10.0,
+            "rotateY": 20.0,
+            "rotateZ": 30.0,
+            "scaleX": 1.2,
+            "scaleY": 1.3,
+            "scaleZ": 1.1
         }
         
         try:
@@ -113,7 +118,7 @@ class USDViewerHTTPTester:
                 data = json.loads(response)
                 if data.get('status') == 'success':
                     self.log_test("Valid Move Request", True, 
-                                 f"Moved {test_data['sdfPath']} to ({test_data['x']}, {test_data['y']}, {test_data['z']})")
+                                 f"Moved {test_data['sdfPath']} with full transform")
                     return True
                 else:
                     self.log_test("Valid Move Request", False, f"Unexpected status: {data.get('status')}")
@@ -162,13 +167,18 @@ class USDViewerHTTPTester:
     
     def test_move_request_partial_params(self):
         """Test move request with partial parameters (should preserve current values)."""
-        # First, set a known initial position
+        # First, set a known initial position with full transform
         initial_data = {
             "sdfPath": "/World/TestCube",
             "x": 10.0,
             "y": 5.0,
             "z": 2.0,
-            "rotateZ": 90.0
+            "rotateX": 15.0,
+            "rotateY": 30.0,
+            "rotateZ": 90.0,
+            "scaleX": 1.5,
+            "scaleY": 2.0,
+            "scaleZ": 0.8
         }
         
         try:
@@ -183,11 +193,12 @@ class USDViewerHTTPTester:
             import time
             time.sleep(0.1)
             
-            # Now test partial update (only change x)
+            # Now test partial update (only change x and rotateZ)
             partial_data = {
                 "sdfPath": "/World/TestCube",
-                "x": 15.0
-                # y, z, rotateZ should be preserved
+                "x": 15.0,
+                "rotateZ": 45.0
+                # Other values should be preserved
             }
             
             status_code, response = self.make_request('POST', '/move', partial_data)
@@ -197,21 +208,27 @@ class USDViewerHTTPTester:
                 if data.get('status') == 'success':
                     transform = data.get('transform', {})
                     translation = transform.get('translation', [])
-                    rotation = transform.get('rotation_z_degrees', 0)
+                    rotation = transform.get('rotation_degrees', [])
+                    scale = transform.get('scale', [])
                     
                     # Check if partial update worked correctly
-                    if (len(translation) == 3 and 
-                        abs(translation[0] - 15.0) < 0.001 and  # x changed
-                        abs(translation[1] - 5.0) < 0.001 and   # y preserved
-                        abs(translation[2] - 2.0) < 0.001 and   # z preserved
-                        abs(rotation - 90.0) < 0.001):          # rotateZ preserved
+                    if (len(translation) == 3 and len(rotation) == 3 and len(scale) == 3 and
+                        abs(translation[0] - 15.0) < 0.001 and   # x changed
+                        abs(translation[1] - 5.0) < 0.001 and    # y preserved
+                        abs(translation[2] - 2.0) < 0.001 and    # z preserved
+                        abs(rotation[0] - 15.0) < 0.001 and      # rotateX preserved
+                        abs(rotation[1] - 30.0) < 0.001 and      # rotateY preserved
+                        abs(rotation[2] - 45.0) < 0.001 and      # rotateZ changed
+                        abs(scale[0] - 1.5) < 0.001 and          # scaleX preserved
+                        abs(scale[1] - 2.0) < 0.001 and          # scaleY preserved
+                        abs(scale[2] - 0.8) < 0.001):            # scaleZ preserved
                         
                         self.log_test("Partial Parameters Move Request", True, 
-                                     f"Correctly preserved existing values: x=15.0, y=5.0, z=2.0, rotateZ=90.0")
+                                     f"Correctly preserved existing values while updating x and rotateZ")
                         return True
                     else:
                         self.log_test("Partial Parameters Move Request", False, 
-                                     f"Transform values incorrect: expected (15.0, 5.0, 2.0, 90.0), got ({translation[0] if len(translation) > 0 else 'N/A'}, {translation[1] if len(translation) > 1 else 'N/A'}, {translation[2] if len(translation) > 2 else 'N/A'}, {rotation})")
+                                     f"Transform values incorrect: translation={translation}, rotation={rotation}, scale={scale}")
                         return False
                 else:
                     self.log_test("Partial Parameters Move Request", False, 
@@ -268,7 +285,12 @@ class USDViewerHTTPTester:
             "x": 7.0,
             "y": 3.0,
             "z": 1.5,
-            "rotateZ": 45.0
+            "rotateX": 15.0,
+            "rotateY": 30.0,
+            "rotateZ": 45.0,
+            "scaleX": 1.2,
+            "scaleY": 1.5,
+            "scaleZ": 0.8
         }
         
         try:
@@ -296,21 +318,27 @@ class USDViewerHTTPTester:
                 if data.get('status') == 'success':
                     transform = data.get('transform', {})
                     translation = transform.get('translation', [])
-                    rotation = transform.get('rotation_z_degrees', 0)
+                    rotation = transform.get('rotation_degrees', [])
+                    scale = transform.get('scale', [])
                     
                     # Check if all values were preserved
-                    if (len(translation) == 3 and 
-                        abs(translation[0] - 7.0) < 0.001 and   # x preserved
-                        abs(translation[1] - 3.0) < 0.001 and   # y preserved
-                        abs(translation[2] - 1.5) < 0.001 and   # z preserved
-                        abs(rotation - 45.0) < 0.001):          # rotateZ preserved
+                    if (len(translation) == 3 and len(rotation) == 3 and len(scale) == 3 and
+                        abs(translation[0] - 7.0) < 0.001 and    # x preserved
+                        abs(translation[1] - 3.0) < 0.001 and    # y preserved
+                        abs(translation[2] - 1.5) < 0.001 and    # z preserved
+                        abs(rotation[0] - 15.0) < 0.001 and      # rotateX preserved
+                        abs(rotation[1] - 30.0) < 0.001 and      # rotateY preserved
+                        abs(rotation[2] - 45.0) < 0.001 and      # rotateZ preserved
+                        abs(scale[0] - 1.2) < 0.001 and          # scaleX preserved
+                        abs(scale[1] - 1.5) < 0.001 and          # scaleY preserved
+                        abs(scale[2] - 0.8) < 0.001):            # scaleZ preserved
                         
                         self.log_test("SdfPath Only Move Request", True, 
-                                     f"Correctly preserved all values: x=7.0, y=3.0, z=1.5, rotateZ=45.0")
+                                     f"Correctly preserved all values")
                         return True
                     else:
                         self.log_test("SdfPath Only Move Request", False, 
-                                     f"Transform values not preserved: expected (7.0, 3.0, 1.5, 45.0), got ({translation[0] if len(translation) > 0 else 'N/A'}, {translation[1] if len(translation) > 1 else 'N/A'}, {translation[2] if len(translation) > 2 else 'N/A'}, {rotation})")
+                                     f"Transform values not preserved: translation={translation}, rotation={rotation}, scale={scale}")
                         return False
                 else:
                     self.log_test("SdfPath Only Move Request", False, 
@@ -354,9 +382,24 @@ class USDViewerHTTPTester:
     def test_multiple_moves(self):
         """Test multiple move operations in sequence."""
         test_prims = [
-            {"path": "/World/TestCube", "pos": (1, 0, 0), "rot": 45},
-            {"path": "/World/TestSphere", "pos": (0, 2, 1), "rot": 90},
-            {"path": "/World/TestCylinder", "pos": (-2, 0, 0.5), "rot": 180}
+            {
+                "path": "/World/TestCube", 
+                "pos": (1, 0, 0), 
+                "rot": (0, 0, 45),
+                "scale": (1.0, 1.0, 1.0)
+            },
+            {
+                "path": "/World/TestSphere", 
+                "pos": (0, 2, 1), 
+                "rot": (30, 45, 90),
+                "scale": (1.2, 1.2, 1.2)
+            },
+            {
+                "path": "/World/TestCylinder", 
+                "pos": (-2, 0, 0.5), 
+                "rot": (0, 90, 180),
+                "scale": (0.8, 1.5, 0.8)
+            }
         ]
         
         success_count = 0
@@ -366,7 +409,12 @@ class USDViewerHTTPTester:
                 "x": prim_data["pos"][0],
                 "y": prim_data["pos"][1], 
                 "z": prim_data["pos"][2],
-                "rotateZ": prim_data["rot"]
+                "rotateX": prim_data["rot"][0],
+                "rotateY": prim_data["rot"][1],
+                "rotateZ": prim_data["rot"][2],
+                "scaleX": prim_data["scale"][0],
+                "scaleY": prim_data["scale"][1],
+                "scaleZ": prim_data["scale"][2]
             }
             
             try:
@@ -378,8 +426,14 @@ class USDViewerHTTPTester:
                         print(f"    Move {i+1}/3: {prim_data['path']} ✓")
                     else:
                         print(f"    Move {i+1}/3: {prim_data['path']} ✗ (status: {data.get('status')})")
+                        print(f"      Error: {data.get('message', 'Unknown error')}")
                 else:
                     print(f"    Move {i+1}/3: {prim_data['path']} ✗ (HTTP {status_code})")
+                    try:
+                        error_data = json.loads(response)
+                        print(f"      Error: {error_data.get('message', 'Unknown error')}")
+                    except:
+                        print(f"      Response: {response}")
                     
                 # Small delay between requests
                 time.sleep(0.1)
@@ -394,6 +448,113 @@ class USDViewerHTTPTester:
         else:
             self.log_test("Multiple Move Operations", False, 
                          f"Only {success_count}/{len(test_prims)} moves succeeded")
+            return False
+    
+    def test_complex_xform_operations(self):
+        """Test complex transform operations on different USD xformOp configurations."""
+        # Test with TestSphere which has rotateXYZ and scale
+        test_data = {
+            "sdfPath": "/World/TestSphere",
+            "x": 5.0,
+            "y": 2.0,
+            "z": 3.0,
+            "rotateX": 45.0,
+            "rotateY": 90.0,
+            "rotateZ": 135.0,
+            "scaleX": 2.0,
+            "scaleY": 1.5,
+            "scaleZ": 0.5
+        }
+        
+        try:
+            status_code, response = self.make_request('POST', '/move', test_data)
+            
+            if status_code == 200:
+                data = json.loads(response)
+                if data.get('status') == 'success':
+                    transform = data.get('transform', {})
+                    translation = transform.get('translation', [])
+                    rotation = transform.get('rotation_degrees', [])
+                    scale = transform.get('scale', [])
+                    
+                    # Verify complex transform values
+                    if (len(translation) == 3 and len(rotation) == 3 and len(scale) == 3 and
+                        abs(translation[0] - 5.0) < 0.001 and
+                        abs(translation[1] - 2.0) < 0.001 and
+                        abs(translation[2] - 3.0) < 0.001 and
+                        abs(rotation[0] - 45.0) < 0.001 and
+                        abs(rotation[1] - 90.0) < 0.001 and
+                        abs(rotation[2] - 135.0) < 0.001 and
+                        abs(scale[0] - 2.0) < 0.001 and
+                        abs(scale[1] - 1.5) < 0.001 and
+                        abs(scale[2] - 0.5) < 0.001):
+                        
+                        self.log_test("Complex Transform Operations", True, 
+                                     "Complex transform applied correctly to rotateXYZ+scale prim")
+                        return True
+                    else:
+                        self.log_test("Complex Transform Operations", False, 
+                                     f"Transform values incorrect: translation={translation}, rotation={rotation}, scale={scale}")
+                        return False
+                else:
+                    self.log_test("Complex Transform Operations", False, 
+                                 f"Unexpected status: {data.get('status')}")
+                    return False
+            else:
+                data = json.loads(response)
+                self.log_test("Complex Transform Operations", False, 
+                             f"HTTP {status_code}: {data.get('message', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Complex Transform Operations", False, str(e))
+            return False
+    
+    def test_scale_operations(self):
+        """Test scale operations on different USD xformOp configurations."""
+        # Test with TestCylinder which has individual rotation axes
+        test_data = {
+            "sdfPath": "/World/TestCylinder",
+            "scaleX": 3.0,
+            "scaleY": 0.5,
+            "scaleZ": 2.0
+            # Only scale parameters - translation and rotation should be preserved
+        }
+        
+        try:
+            status_code, response = self.make_request('POST', '/move', test_data)
+            
+            if status_code == 200:
+                data = json.loads(response)
+                if data.get('status') == 'success':
+                    transform = data.get('transform', {})
+                    scale = transform.get('scale', [])
+                    
+                    # Verify scale values
+                    if (len(scale) == 3 and
+                        abs(scale[0] - 3.0) < 0.001 and
+                        abs(scale[1] - 0.5) < 0.001 and
+                        abs(scale[2] - 2.0) < 0.001):
+                        
+                        self.log_test("Scale Operations", True, 
+                                     "Scale operations applied correctly")
+                        return True
+                    else:
+                        self.log_test("Scale Operations", False, 
+                                     f"Scale values incorrect: {scale}")
+                        return False
+                else:
+                    self.log_test("Scale Operations", False, 
+                                 f"Unexpected status: {data.get('status')}")
+                    return False
+            else:
+                data = json.loads(response)
+                self.log_test("Scale Operations", False, 
+                             f"HTTP {status_code}: {data.get('message', 'Unknown error')}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Scale Operations", False, str(e))
             return False
     
     def run_all_tests(self):
@@ -421,6 +582,8 @@ class USDViewerHTTPTester:
         self.test_move_request_only_sdf_path()
         self.test_invalid_endpoint()
         self.test_multiple_moves()
+        self.test_complex_xform_operations()
+        self.test_scale_operations()
         
         # Summary
         print("\n" + "=" * 50)
