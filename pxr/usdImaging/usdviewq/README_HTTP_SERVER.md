@@ -49,7 +49,7 @@ usdview your_file.usd
 curl http://localhost:8080/
 ```
 
-#### Move操作
+#### Move操作（全パラメータ指定）
 
 ```bash
 curl -X POST http://localhost:8080/move \
@@ -60,6 +60,26 @@ curl -X POST http://localhost:8080/move \
     "y": 0.0,
     "z": 2.0,
     "rotateZ": 45.0
+  }'
+```
+
+#### Move操作（部分的な更新）
+
+```bash
+# X座標のみ変更（他の値は現在値を維持）
+curl -X POST http://localhost:8080/move \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sdfPath": "/World/Cube",
+    "x": 10.0
+  }'
+
+# 回転のみ変更
+curl -X POST http://localhost:8080/move \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sdfPath": "/World/Cube",
+    "rotateZ": 90.0
   }'
 ```
 
@@ -85,13 +105,13 @@ curl -X POST http://localhost:8080/move \
 指定されたPrimの位置と回転を更新します。
 
 **リクエストパラメータ:**
-- `sdfPath` (string): 操作対象のPrimのSdfPath（例: "/World/Cube"）
-- `x` (float): X座標
-- `y` (float): Y座標
-- `z` (float): Z座標
-- `rotateZ` (float): Z軸回転（度単位）
+- `sdfPath` (string, 必須): 操作対象のPrimのSdfPath（例: "/World/Cube"）
+- `x` (float, オプション): X座標（省略時は現在値を維持）
+- `y` (float, オプション): Y座標（省略時は現在値を維持）
+- `z` (float, オプション): Z座標（省略時は現在値を維持）
+- `rotateZ` (float, オプション): Z軸回転（度単位、省略時は現在値を維持）
 
-**リクエスト例:**
+**リクエスト例 (全パラメータ指定):**
 ```json
 {
   "sdfPath": "/World/Cube",
@@ -99,6 +119,24 @@ curl -X POST http://localhost:8080/move \
   "y": 0.0,
   "z": 2.0,
   "rotateZ": 45.0
+}
+```
+
+**リクエスト例 (部分的な更新):**
+```json
+{
+  "sdfPath": "/World/Cube",
+  "x": 10.0
+}
+```
+
+**リクエスト例 (位置のみ更新):**
+```json
+{
+  "sdfPath": "/World/Cube",
+  "x": 5.0,
+  "y": 2.0,
+  "z": 1.0
 }
 ```
 

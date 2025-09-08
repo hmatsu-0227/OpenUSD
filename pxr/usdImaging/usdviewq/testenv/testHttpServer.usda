@@ -9,7 +9,8 @@ def Xform "World"
     def Cube "TestCube"
     {
         double3 xformOp:translate = (0, 0, 0)
-        uniform token[] xformOpOrder = ["xformOp:translate"]
+        double xformOp:rotateZ = 0
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
         
         color3f[] primvars:displayColor = [(0.2, 0.5, 0.8)]
     }
@@ -17,7 +18,8 @@ def Xform "World"
     def Sphere "TestSphere"
     {
         double3 xformOp:translate = (3, 0, 0)
-        uniform token[] xformOpOrder = ["xformOp:translate"]
+        double xformOp:rotateZ = 0
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
         
         color3f[] primvars:displayColor = [(0.8, 0.2, 0.2)]
     }
@@ -25,7 +27,8 @@ def Xform "World"
     def Cylinder "TestCylinder"
     {
         double3 xformOp:translate = (-3, 0, 0)
-        uniform token[] xformOpOrder = ["xformOp:translate"]
+        double xformOp:rotateZ = 0
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
         
         color3f[] primvars:displayColor = [(0.2, 0.8, 0.2)]
     }

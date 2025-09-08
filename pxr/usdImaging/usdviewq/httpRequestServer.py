@@ -97,26 +97,20 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
         
         Expected request format:
         {
-            "sdfPath": "/path/to/prim",
-            "x": 1.0,
-            "y": 2.0,
-            "z": 3.0,
-            "rotateZ": 45.0  # rotation in degrees
+            "sdfPath": "/path/to/prim",      # Required
+            "x": 1.0,                        # Optional - preserves current value if not provided
+            "y": 2.0,                        # Optional - preserves current value if not provided
+            "z": 3.0,                        # Optional - preserves current value if not provided
+            "rotateZ": 45.0                  # Optional - preserves current value if not provided (rotation in degrees)
         }
         """
         try:
-            # Validate required parameters
-            required_params = ['sdfPath', 'x', 'y', 'z', 'rotateZ']
-            for param in required_params:
-                if param not in request_data:
-                    self._send_error(400, f"Missing required parameter: {param}")
-                    return
+            # Validate required parameters (only sdfPath is required)
+            if 'sdfPath' not in request_data:
+                self._send_error(400, "Missing required parameter: sdfPath")
+                return
             
             sdf_path = request_data['sdfPath']
-            x = float(request_data['x'])
-            y = float(request_data['y'])
-            z = float(request_data['z'])
-            rotate_z = float(request_data['rotateZ'])
             
             # Validate SdfPath
             try:
@@ -127,6 +121,15 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send_error(400, f"Invalid prim path: {sdf_path} - {str(e)}")
                 return
+            
+            # Get current transform values if prim exists
+            current_x, current_y, current_z, current_rotate_z = self._get_current_transform(prim_path)
+            
+            # Use provided values or fallback to current values
+            x = float(request_data.get('x', current_x))
+            y = float(request_data.get('y', current_y))
+            z = float(request_data.get('z', current_z))
+            rotate_z = float(request_data.get('rotateZ', current_rotate_z))
             
             # Execute the move operation
             success, message = self._move_prim(prim_path, x, y, z, rotate_z)
@@ -148,6 +151,84 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_error(500, f"Error processing move request: {str(e)}")
             traceback.print_exc()
+    
+    def _get_current_transform(self, prim_path):
+        """
+        Get the current transform values of a prim.
+        
+        Returns:
+            tuple: (x, y, z, rotate_z_degrees) - defaults to (0,0,0,0) if no transform exists
+        """
+        if not self.usd_stage:
+            return 0.0, 0.0, 0.0, 0.0
+        
+        # Get the prim
+        prim = self.usd_stage.GetPrimAtPath(prim_path)
+        if not prim.IsValid():
+            # Return default values for non-existent prims
+            return 0.0, 0.0, 0.0, 0.0
+        
+        # Check if the prim is xformable
+        if not UsdGeom.Xformable(prim):
+            return 0.0, 0.0, 0.0, 0.0
+        
+        xformable = UsdGeom.Xformable(prim)
+        
+        try:
+            # Initialize default values
+            x, y, z = 0.0, 0.0, 0.0
+            rotate_z_degrees = 0.0
+            
+            # Get the xform ops and their order
+            xform_ops = xformable.GetOrderedXformOps()
+            
+            for xform_op in xform_ops:
+                op_type = xform_op.GetOpType()
+                
+                # Handle different transform operation types
+                if op_type == UsdGeom.XformOp.TypeTransform:
+                    # This is a transform matrix
+                    matrix = xform_op.Get()
+                    if matrix:
+                        # Extract translation
+                        translation = matrix.ExtractTranslation()
+                        x, y, z = float(translation[0]), float(translation[1]), float(translation[2])
+                        
+                        # Extract Z rotation from matrix
+                        import math
+                        # Extract the rotation component
+                        rotation = matrix.ExtractRotation()
+                        rotation_matrix = rotation.GetMatrix()
+                        
+                        # Calculate Z rotation assuming it's the primary rotation
+                        rotate_z_radians = math.atan2(rotation_matrix[1][0], rotation_matrix[0][0])
+                        rotate_z_degrees = float(rotate_z_radians * (180.0 / math.pi))
+                
+                elif op_type == UsdGeom.XformOp.TypeTranslate:
+                    # Translation operation
+                    translation = xform_op.Get()
+                    if translation and len(translation) >= 3:
+                        x, y, z = float(translation[0]), float(translation[1]), float(translation[2])
+                
+                elif op_type == UsdGeom.XformOp.TypeRotateZ:
+                    # Z rotation operation (in degrees)
+                    rotation = xform_op.Get()
+                    if rotation is not None:
+                        rotate_z_degrees = float(rotation)
+                
+                elif op_type == UsdGeom.XformOp.TypeRotateXYZ:
+                    # XYZ rotation operation
+                    rotation = xform_op.Get()
+                    if rotation and len(rotation) >= 3:
+                        # Take only the Z component
+                        rotate_z_degrees = float(rotation[2])
+            
+            return x, y, z, rotate_z_degrees
+            
+        except Exception as e:
+            # If we can't extract transform, return defaults
+            print(f"Warning: Could not extract transform from {prim_path}: {e}")
+            return 0.0, 0.0, 0.0, 0.0
     
     def _move_prim(self, prim_path, x, y, z, rotate_z_degrees):
         """
@@ -173,35 +254,52 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
         else:
             xformable = UsdGeom.Xformable(prim)
         
-        # Create the transform matrix
-        # Convert rotation from degrees to radians
-        rotate_z_radians = rotate_z_degrees * (3.14159265359 / 180.0)
-        
-        # Create translation matrix
-        translation = Gf.Vec3d(x, y, z)
-        
-        # Create rotation matrix (rotation around Z axis)
-        rotation = Gf.Rotation(Gf.Vec3d(0, 0, 1), rotate_z_radians)
-        
-        # Create the transform matrix
-        transform_matrix = Gf.Matrix4d(1.0)
-        transform_matrix.SetTranslateOnly(translation)
-        transform_matrix = transform_matrix * Gf.Matrix4d(rotation, Gf.Vec3d(0, 0, 0))
-        
-        # Clear existing transform ops and set new one
-        xformable.ClearXformOpOrder()
-        transform_op = xformable.AddTransformOp()
-        transform_op.Set(transform_matrix)
-        
-        # Refresh the viewer if app_controller is available
-        if self.app_controller:
-            try:
-                # Trigger a refresh of the viewer
-                self.app_controller._refreshGUI()
-            except Exception as e:
-                print(f"Warning: Could not refresh GUI: {e}")
-        
-        return True, f"Successfully moved prim {prim_path} to position ({x}, {y}, {z}) with Z rotation {rotate_z_degrees} degrees"
+        try:
+            # Get existing xform ops or create new ones
+            existing_ops = xformable.GetOrderedXformOps()
+            
+            # Look for existing translate and rotateZ ops
+            translate_op = None
+            rotate_z_op = None
+            
+            for op in existing_ops:
+                if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+                    translate_op = op
+                elif op.GetOpType() == UsdGeom.XformOp.TypeRotateZ:
+                    rotate_z_op = op
+                elif op.GetOpType() == UsdGeom.XformOp.TypeTransform:
+                    # If there's a transform matrix, we need to clear and rebuild
+                    xformable.ClearXformOpOrder()
+                    translate_op = None
+                    rotate_z_op = None
+                    break
+            
+            # Create translate op if it doesn't exist
+            if translate_op is None:
+                translate_op = xformable.AddTranslateOp()
+            
+            # Create rotateZ op if it doesn't exist
+            if rotate_z_op is None:
+                rotate_z_op = xformable.AddRotateZOp()
+            
+            # Set the translation
+            translate_op.Set(Gf.Vec3d(x, y, z))
+            
+            # Set the Z rotation (in degrees - USD rotateZ expects degrees)
+            rotate_z_op.Set(rotate_z_degrees)
+            
+            # Refresh the viewer if app_controller is available
+            if self.app_controller:
+                try:
+                    # Trigger a refresh of the viewer
+                    self.app_controller._refreshGUI()
+                except Exception as e:
+                    print(f"Warning: Could not refresh GUI: {e}")
+            
+            return True, f"Successfully moved prim {prim_path} to position ({x}, {y}, {z}) with Z rotation {rotate_z_degrees} degrees"
+            
+        except Exception as e:
+            return False, f"Error setting transform: {str(e)}"
     
     def _send_success(self, data):
         """Send a successful response."""
