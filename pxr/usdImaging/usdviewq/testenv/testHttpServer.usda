@@ -1,0 +1,32 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Cube "TestCube"
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        
+        color3f[] primvars:displayColor = [(0.2, 0.5, 0.8)]
+    }
+    
+    def Sphere "TestSphere"
+    {
+        double3 xformOp:translate = (3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        
+        color3f[] primvars:displayColor = [(0.8, 0.2, 0.2)]
+    }
+    
+    def Cylinder "TestCylinder"
+    {
+        double3 xformOp:translate = (-3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        
+        color3f[] primvars:displayColor = [(0.2, 0.8, 0.2)]
+    }
+}
