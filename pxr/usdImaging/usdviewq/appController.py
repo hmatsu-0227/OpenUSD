@@ -5458,8 +5458,9 @@ class AppController(QtCore.QObject):
                     self._promptResponse = user_input
                     self._promptPendingEvent.set()
                 
-                # Clear the userPromptInput
+                # Clear the userPromptInput and set it back to read-only
                 self._ui.userPromptInput.clear()
+                self._ui.userPromptInput.setReadOnly(True)
                 
                 return True  # Event handled
         return super().eventFilter(obj, event)

@@ -216,9 +216,6 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
                         history_widget = None
                         if hasattr(self.app_controller._ui, 'history'):
                             history_widget = self.app_controller._ui.history
-                        elif hasattr(self.app_controller, '_mainWindow') and hasattr(self.app_controller._mainWindow, '_ui'):
-                            if hasattr(self.app_controller._mainWindow._ui, 'history'):
-                                history_widget = self.app_controller._mainWindow._ui.history
                         
                         if history_widget:
                             # Schedule the GUI update to happen in the main thread
@@ -232,6 +229,12 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
                             try:
                                 # Simple direct call - Qt should handle thread safety for basic operations
                                 history_widget.append(formatted_message)
+                                
+                                # Set userPromptInput to editable when receiving HTTP prompt
+                                if hasattr(self.app_controller._ui, 'userPromptInput'):
+                                    user_input_widget = self.app_controller._ui.userPromptInput
+                                    user_input_widget.setReadOnly(False)
+                                    
                             except Exception as e:
                                 print(f"Warning: Could not append to history: {e}")
                     else:
