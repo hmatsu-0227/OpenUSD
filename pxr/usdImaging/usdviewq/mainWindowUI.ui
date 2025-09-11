@@ -629,7 +629,7 @@
         <property name="lineWidth">
          <number>0</number>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_7">
+        <layout class="QVBoxLayout" name="verticalLayout_7" stretch="4,1">
          <property name="leftMargin">
           <number>2</number>
          </property>
@@ -649,6 +649,16 @@
            </property>
            <property name="placeholderText">
             <string>Agent messages will appear here... (Read-only)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTextEdit" name="userPromptInput">
+           <property name="readOnly">
+            <bool>false</bool>
+           </property>
+           <property name="placeholderText">
+            <string>Enter your prompt here...</string>
            </property>
           </widget>
          </item>
