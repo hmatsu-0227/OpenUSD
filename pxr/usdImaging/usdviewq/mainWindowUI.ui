@@ -619,7 +619,7 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QFrame" name="agentMessageFrame">
+       <widget class="QFrame" name="agentPromptFrame">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -643,7 +643,7 @@
           <number>5</number>
          </property>
          <item>
-          <widget class="QTextEdit" name="agentMessage">
+          <widget class="QTextEdit" name="history">
            <property name="readOnly">
             <bool>true</bool>
            </property>

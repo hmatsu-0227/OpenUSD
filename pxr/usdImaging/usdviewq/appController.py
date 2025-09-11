@@ -166,13 +166,13 @@ class UIStateProxySource(StateSource):
                     [primViewWidth, stageViewWidth])
                 self._mainWindow._ui.topBottomSplitter.setSizes(
                     [topHeight, bottomHeight])
-            # agentMessageUserPromptSplitter now only contains agentMessageFrame
+            # agentMessageUserPromptSplitter now only contains agentPromptFrame
             self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes([agentMessageWidth])
             self._mainWindow._viewerModeEscapeSizes = topHeight, bottomHeight, primViewWidth, stageViewWidth
         else:
             self._mainWindow._ui.primStageSplitter.setSizes(
                 [UIDefaults.PRIM_VIEW_WIDTH, UIDefaults.STAGE_VIEW_WIDTH])
-            # agentMessageUserPromptSplitter now only contains agentMessageFrame  
+            # agentMessageUserPromptSplitter now only contains agentPromptFrame  
             self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes([UIDefaults.AGENT_MESSAGE_WIDTH])
             self._mainWindow._ui.topBottomSplitter.setSizes(
                 [UIDefaults.TOP_HEIGHT, UIDefaults.BOTTOM_HEIGHT])
@@ -181,7 +181,7 @@ class UIStateProxySource(StateSource):
             self._mainWindow._ui.primView.setColumnHidden(i, not visible)
         # Agent Message is now a QTextEdit, column operations not applicable
         # for i, visible in enumerate(agentMessageColumnVisibility):
-        #     self._mainWindow._ui.agentMessage.setColumnHidden(i, not visible)
+        #     self._mainWindow._ui.history.setColumnHidden(i, not visible)
 
         # userPrompt has been removed from UI, skip property index setting
         # propertyIndex = attributeInspectorCurrentTab
@@ -194,7 +194,7 @@ class UIStateProxySource(StateSource):
         # UI is different when --norender is used so don't load the splitter sizes.
         if not self._mainWindow._noRender:
             primViewWidth, stageViewWidth = self._mainWindow._ui.primStageSplitter.sizes()
-            # agentMessageUserPromptSplitter now only contains agentMessageFrame
+            # agentMessageUserPromptSplitter now only contains agentPromptFrame
             agentMessageSizes = self._mainWindow._ui.agentMessageUserPromptSplitter.sizes()
             agentMessageWidth = agentMessageSizes[0] if agentMessageSizes else UIDefaults.AGENT_MESSAGE_WIDTH
             topHeight, bottomHeight = self._mainWindow._ui.topBottomSplitter.sizes()
@@ -606,17 +606,17 @@ class AppController(QtCore.QObject):
             # Agent Message is now a QTextEdit, tree widget operations not applicable
             # # This causes the last column of the agent message view (the value)
             # # to be stretched to fill the available space
-            # self._ui.agentMessage.header().setStretchLastSection(True)
+            # self._ui.history.header().setStretchLastSection(True)
             
-            # self._ui.agentMessage.setSelectionBehavior(
+            # self._ui.history.setSelectionBehavior(
             #     QtWidgets.QAbstractItemView.SelectRows)
             self._ui.primView.setSelectionBehavior(
                 QtWidgets.QAbstractItemView.SelectRows)
             # # This allows ctrl and shift clicking for multi-selecting
-            # self._ui.agentMessage.setSelectionMode(
+            # self._ui.history.setSelectionMode(
             #     QtWidgets.QAbstractItemView.ExtendedSelection)
 
-            # self._ui.agentMessage.setHorizontalScrollMode(
+            # self._ui.history.setHorizontalScrollMode(
             #     QtWidgets.QAbstractItemView.ScrollPerPixel)
 
             self._ui.frameSlider.setTracking(
@@ -728,17 +728,17 @@ class AppController(QtCore.QObject):
             # headers. This is so we can have a context menu on the
             # headers that allows you to select which columns are visible.
             # Agent Message is now a QTextEdit, header operations not applicable
-            # self._ui.agentMessage.header()\
+            # self._ui.history.header()\
             #         .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self._ui.primView.header()\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
             # Set custom context menu for agent message browser
-            self._ui.agentMessage\
+            self._ui.history\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             
             # Make agent message read-only (not editable by user)
-            self._ui.agentMessage.setReadOnly(True)
+            self._ui.history.setReadOnly(True)
 
             # Set custom context menu for layer stack browser
             # layerStackView removed from UI
@@ -786,7 +786,7 @@ class AppController(QtCore.QObject):
                 QtWidgets.QHeaderView.Fixed)
 
             # Agent Message is now a QTextEdit, header operations not applicable
-            # pvh = self._ui.agentMessage.header()
+            # pvh = self._ui.history.header()
             # pvh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
             # pvh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
             # pvh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
@@ -798,7 +798,7 @@ class AppController(QtCore.QObject):
             self._ui.primView.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
             # Agent Message is now a QTextEdit, scrollbar policy different
-            # self._ui.agentMessage.setHorizontalScrollBarPolicy(
+            # self._ui.history.setHorizontalScrollBarPolicy(
             #     QtCore.Qt.ScrollBarAlwaysOn)
             # metadataView removed from UI
             # self._ui.metadataView.setHorizontalScrollBarPolicy(
@@ -959,16 +959,16 @@ class AppController(QtCore.QObject):
             #     self._updateUserPrompt)
 
             # Agent Message is now a QTextEdit, item selection events not applicable
-            # self._ui.agentMessage.itemSelectionChanged.connect(
+            # self._ui.history.itemSelectionChanged.connect(
             #     self._agentMessageSelectionChanged)
 
-            # self._ui.agentMessage.currentItemChanged.connect(
+            # self._ui.history.currentItemChanged.connect(
             #     self._agentMessageCurrentItemChanged)
 
-            # self._ui.agentMessage.header().customContextMenuRequested.\
+            # self._ui.history.header().customContextMenuRequested.\
             #     connect(self._agentMessageHeaderContextMenu)
 
-            self._ui.agentMessage.customContextMenuRequested.connect(
+            self._ui.history.customContextMenuRequested.connect(
                 self._agentMessageContextMenu)
 
             # layerStackView removed from UI
@@ -1889,7 +1889,7 @@ class AppController(QtCore.QObject):
                 self._ui.renderFrame.setParent(None)
 
                 # move the agentMessage into the primSplitter instead
-                self._ui.primStageSplitter.addWidget(self._ui.agentMessageFrame)
+                self._ui.primStageSplitter.addWidget(self._ui.agentPromptFrame)
 
             else:
                 self._stageView = StageView(
@@ -3211,7 +3211,7 @@ class AppController(QtCore.QObject):
         """
 
         selectedProperties = dict()
-        for item in self._ui.agentMessage.selectedItems():
+        for item in self._ui.history.selectedItems():
             # We define data 'roles' in the property viewer to distinguish between things
             # like attributes and attributes with connections, relationships and relationships
             # with targets etc etc.
@@ -3308,7 +3308,7 @@ class AppController(QtCore.QObject):
         pass
 
     def _agentMessageContextMenu(self, point):
-        item = self._ui.agentMessage.itemAt(point)
+        item = self._ui.history.itemAt(point)
         if item:
             self.contextMenu = AgentMessageContextMenu(self._mainWindow, 
                                                         item, self._dataModel)
@@ -3331,7 +3331,7 @@ class AppController(QtCore.QObject):
 
     # Headers & Columns =================================================
     def _agentMessageHeaderContextMenu(self, point):
-        self.contextMenu = HeaderContextMenu(self._ui.agentMessage)
+        self.contextMenu = HeaderContextMenu(self._ui.history)
         self.contextMenu.exec_(QtGui.QCursor.pos())
 
     def _primViewHeaderContextMenu(self, point):
@@ -3991,9 +3991,9 @@ class AppController(QtCore.QObject):
         if focusPrim:
             message = f"Agent Message: Selected prim - {focusPrim.GetPath()}\n"
             message += f"Prim type: {focusPrim.GetTypeName()}\n"
-            self._ui.agentMessage.setPlainText(message)
+            self._ui.history.setPlainText(message)
         else:
-            self._ui.agentMessage.setPlainText("Agent Message: No prim selected")
+            self._ui.history.setPlainText("Agent Message: No prim selected")
         
         self._populateUserPrompt()
 
