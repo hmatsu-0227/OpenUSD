@@ -144,7 +144,8 @@ class UIStateProxySource(StateSource):
         # Agent Message is now QTextEdit, no longer needs column visibility settings
         # agentMessageColumnVisibility = self.stateProperty("agentMessageColumnVisibility",
         #         default=[True, True, True], validator=lambda value: len(value) == 3)
-        attributeInspectorCurrentTab = self.stateProperty("userPromptCurrentTab", default=PropertyIndex.VALUE)
+        # attributeInspectorCurrentTab removed since userPrompt UI was deleted
+        # attributeInspectorCurrentTab = self.stateProperty("userPromptCurrentTab", default=PropertyIndex.VALUE)
 
         # UI is different when --norender is used so just save the default splitter sizes.
         # TODO Save the loaded state so it doesn't disappear after using --norender.
@@ -152,7 +153,7 @@ class UIStateProxySource(StateSource):
             stageViewWidth = self.stateProperty("stageViewWidth", default=UIDefaults.STAGE_VIEW_WIDTH)
             primViewWidth = self.stateProperty("primViewWidth", default=UIDefaults.PRIM_VIEW_WIDTH)
             agentMessageWidth = self.stateProperty("agentMessageWidth", default=UIDefaults.AGENT_MESSAGE_WIDTH)
-            userPromptWidth = self.stateProperty("userPromptWidth", default=UIDefaults.USER_PROMPT_WIDTH)
+            # userPromptWidth removed since userPromptFrame was deleted
             topHeight = self.stateProperty("topHeight", default=UIDefaults.TOP_HEIGHT)
             bottomHeight = self.stateProperty("bottomHeight", default=UIDefaults.BOTTOM_HEIGHT)
             viewerMode = self.stateProperty("viewerMode", default=False)
@@ -165,14 +166,14 @@ class UIStateProxySource(StateSource):
                     [primViewWidth, stageViewWidth])
                 self._mainWindow._ui.topBottomSplitter.setSizes(
                     [topHeight, bottomHeight])
-            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes(
-                [agentMessageWidth, userPromptWidth])
+            # agentMessageUserPromptSplitter now only contains agentMessageFrame
+            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes([agentMessageWidth])
             self._mainWindow._viewerModeEscapeSizes = topHeight, bottomHeight, primViewWidth, stageViewWidth
         else:
             self._mainWindow._ui.primStageSplitter.setSizes(
                 [UIDefaults.PRIM_VIEW_WIDTH, UIDefaults.STAGE_VIEW_WIDTH])
-            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes(
-                [UIDefaults.AGENT_MESSAGE_WIDTH, UIDefaults.USER_PROMPT_WIDTH])
+            # agentMessageUserPromptSplitter now only contains agentMessageFrame  
+            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes([UIDefaults.AGENT_MESSAGE_WIDTH])
             self._mainWindow._ui.topBottomSplitter.setSizes(
                 [UIDefaults.TOP_HEIGHT, UIDefaults.BOTTOM_HEIGHT])
 
@@ -182,16 +183,20 @@ class UIStateProxySource(StateSource):
         # for i, visible in enumerate(agentMessageColumnVisibility):
         #     self._mainWindow._ui.agentMessage.setColumnHidden(i, not visible)
 
-        propertyIndex = attributeInspectorCurrentTab
-        if propertyIndex not in PropertyIndex:
-            propertyIndex = PropertyIndex.VALUE
-        self._mainWindow._ui.userPrompt.setCurrentIndex(propertyIndex)
+        # userPrompt has been removed from UI, skip property index setting
+        # propertyIndex = attributeInspectorCurrentTab
+        # if propertyIndex not in PropertyIndex:
+        #     propertyIndex = PropertyIndex.VALUE
+        # userPrompt has been removed from UI
+        # self._mainWindow._ui.userPrompt.setCurrentIndex(propertyIndex)
 
     def onSaveState(self, state):
         # UI is different when --norender is used so don't load the splitter sizes.
         if not self._mainWindow._noRender:
             primViewWidth, stageViewWidth = self._mainWindow._ui.primStageSplitter.sizes()
-            agentMessageWidth, userPromptWidth = self._mainWindow._ui.agentMessageUserPromptSplitter.sizes()
+            # agentMessageUserPromptSplitter now only contains agentMessageFrame
+            agentMessageSizes = self._mainWindow._ui.agentMessageUserPromptSplitter.sizes()
+            agentMessageWidth = agentMessageSizes[0] if agentMessageSizes else UIDefaults.AGENT_MESSAGE_WIDTH
             topHeight, bottomHeight = self._mainWindow._ui.topBottomSplitter.sizes()
             viewerMode = (bottomHeight == 0 and primViewWidth == 0)
 
@@ -204,14 +209,13 @@ class UIStateProxySource(StateSource):
                     primViewWidth = UIDefaults.STAGE_VIEW_WIDTH
                     stageViewWidth = UIDefaults.PRIM_VIEW_WIDTH
                     agentMessageWidth = UIDefaults.AGENT_MESSAGE_WIDTH
-                    userPromptWidth = UIDefaults.USER_PROMPT_WIDTH
                     topHeight = UIDefaults.TOP_HEIGHT
                     bottomHeight = UIDefaults.BOTTOM_HEIGHT
 
             state["primViewWidth"] = primViewWidth
             state["stageViewWidth"] = stageViewWidth
             state["agentMessageWidth"] = agentMessageWidth
-            state["userPromptWidth"] = userPromptWidth
+            # userPromptWidth removed since userPromptFrame was deleted
             state["topHeight"] = topHeight
             state["bottomHeight"] = bottomHeight
             state["viewerMode"] = viewerMode
@@ -225,7 +229,8 @@ class UIStateProxySource(StateSource):
         #     not self._mainWindow._ui.agentMessage.isColumnHidden(c)
         #     for c in range(self._mainWindow._ui.agentMessage.columnCount())]
 
-        state["userPromptCurrentTab"] = self._mainWindow._ui.userPrompt.currentIndex()
+        # userPrompt has been removed from UI
+        # state["userPromptCurrentTab"] = self._mainWindow._ui.userPrompt.currentIndex()
 
 
 class Blocker:
@@ -713,8 +718,9 @@ class AppController(QtCore.QObject):
                 self._ui.primViewDepthGroup.addAction(action)
 
             # setup animation objects for the primView and agentMessage
-            self._userPromptLegendAnim = QtCore.QPropertyAnimation(
-                self._ui.userPromptContainer, b"maximumHeight")
+            # userPromptContainer removed from UI
+            # self._userPromptLegendAnim = QtCore.QPropertyAnimation(
+            #     self._ui.userPromptContainer, b"maximumHeight")
             self._primLegendAnim = QtCore.QPropertyAnimation(
                 self._ui.primLegendContainer, b"maximumHeight")
 
@@ -735,31 +741,35 @@ class AppController(QtCore.QObject):
             self._ui.agentMessage.setReadOnly(True)
 
             # Set custom context menu for layer stack browser
-            self._ui.layerStackView\
-                    .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            # layerStackView removed from UI
+            # self._ui.layerStackView\
+            #         .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
             # Set custom context menu for composition tree browser
-            self._ui.compositionTreeWidget\
-                    .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            # compositionTreeWidget removed from UI
+            # self._ui.compositionTreeWidget\
+            #         .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
             # Set up the resize policy for the layer stack view columns.
-            lvh = self._ui.layerStackView.horizontalHeader()
-            lvh.setDefaultAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-            lvh.setSectionResizeMode(LayerStackViewColumnIndex.LAYER, 
-                                     QtWidgets.QHeaderView.ResizeToContents)
-            lvh.setSectionResizeMode(LayerStackViewColumnIndex.OFFSET, 
-                                     QtWidgets.QHeaderView.ResizeToContents)
-            lvh.setSectionResizeMode(LayerStackViewColumnIndex.PATH, 
-                                     QtWidgets.QHeaderView.Stretch)
-            lvh.setSectionResizeMode(LayerStackViewColumnIndex.VALUE, 
-                                     QtWidgets.QHeaderView.ResizeToContents)
+            # layerStackView removed from UI
+            # lvh = self._ui.layerStackView.horizontalHeader()
+            # lvh.setDefaultAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+            # lvh.setSectionResizeMode(LayerStackViewColumnIndex.LAYER, 
+            #                          QtWidgets.QHeaderView.ResizeToContents)
+            # lvh.setSectionResizeMode(LayerStackViewColumnIndex.OFFSET, 
+            #                          QtWidgets.QHeaderView.ResizeToContents)
+            # lvh.setSectionResizeMode(LayerStackViewColumnIndex.PATH, 
+            #                          QtWidgets.QHeaderView.Stretch)
+            # lvh.setSectionResizeMode(LayerStackViewColumnIndex.VALUE, 
+            #                          QtWidgets.QHeaderView.ResizeToContents)
 
             # Arc path is the most likely to need stretch.
-            twh = self._ui.compositionTreeWidget.header()
-            twh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-            twh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-            twh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-            twh.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
+            # compositionTreeWidget removed from UI
+            # twh = self._ui.compositionTreeWidget.header()
+            # twh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+            # twh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+            # twh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+            # twh.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
 
             # Set the prim view header to have a fixed size type and vis columns
             nvh = self._ui.primView.header()
@@ -790,12 +800,15 @@ class AppController(QtCore.QObject):
             # Agent Message is now a QTextEdit, scrollbar policy different
             # self._ui.agentMessage.setHorizontalScrollBarPolicy(
             #     QtCore.Qt.ScrollBarAlwaysOn)
-            self._ui.metadataView.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOn)
-            self._ui.layerStackView.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOn)
+            # metadataView removed from UI
+            # self._ui.metadataView.setHorizontalScrollBarPolicy(
+            #     QtCore.Qt.ScrollBarAlwaysOn)
+            # layerStackView removed from UI
+            # self._ui.layerStackView.setHorizontalScrollBarPolicy(
+            #     QtCore.Qt.ScrollBarAlwaysOn)
 
-            self._ui.attributeValueEditor.setAppController(self)
+            # attributeValueEditor removed from UI
+            # self._ui.attributeValueEditor.setAppController(self)
             self._ui.primView.InitControllers(self)
 
             self._ui.currentPathWidget.editingFinished.connect(
@@ -941,8 +954,9 @@ class AppController(QtCore.QObject):
             self._ui.actionCull_Backfaces.triggered.connect(
                 self._toggleCullBackfaces)
 
-            self._ui.userPrompt.currentChanged.connect(
-                self._updateUserPrompt)
+            # userPrompt removed from UI
+            # self._ui.userPrompt.currentChanged.connect(
+            #     self._updateUserPrompt)
 
             # Agent Message is now a QTextEdit, item selection events not applicable
             # self._ui.agentMessage.itemSelectionChanged.connect(
@@ -957,14 +971,16 @@ class AppController(QtCore.QObject):
             self._ui.agentMessage.customContextMenuRequested.connect(
                 self._agentMessageContextMenu)
 
-            self._ui.layerStackView.customContextMenuRequested.connect(
-                self._layerStackContextMenu)
+            # layerStackView removed from UI
+            # self._ui.layerStackView.customContextMenuRequested.connect(
+            #     self._layerStackContextMenu)
 
-            self._ui.compositionTreeWidget.customContextMenuRequested.connect(
-                self._compositionTreeContextMenu)
+            # compositionTreeWidget removed from UI
+            # self._ui.compositionTreeWidget.customContextMenuRequested.connect(
+            #     self._compositionTreeContextMenu)
 
-            self._ui.compositionTreeWidget.currentItemChanged.connect(
-                self._onCompositionSelectionChanged)
+            # self._ui.compositionTreeWidget.currentItemChanged.connect(
+            #     self._onCompositionSelectionChanged)
 
             self._ui.renderModeActionGroup.triggered.connect(self._changeRenderMode)
 
@@ -1097,7 +1113,8 @@ class AppController(QtCore.QObject):
             self._ui.actionDecrementComplexity.triggered.connect(
                 self._decrementComplexity)
 
-            self._ui.attributeValueEditor.editComplete.connect(self.editComplete)
+            # attributeValueEditor removed from UI
+            # self._ui.attributeValueEditor.editComplete.connect(self.editComplete)
 
             # Edit Prim menu
             self._ui.menuEdit.aboutToShow.connect(self._updateEditMenu)
@@ -1986,10 +2003,14 @@ class AppController(QtCore.QObject):
                 self._resetPrimViewVis(selItemsOnly=False)
 
             self._updateAgentMessage()
-            self._populateUserPrompt()
-            self._updateMetadataView()
-            self._updateLayerStackView()
-            self._updateCompositionView()
+            # _populateUserPrompt removed since userPrompt UI was deleted
+            # self._populateUserPrompt()
+            # _updateMetadataView removed since metadataView UI was deleted
+            # self._updateMetadataView()
+            # _updateLayerStackView removed since layerStackView UI was deleted
+            # self._updateLayerStackView()
+            # _updateCompositionView removed since compositionTreeWidget UI was deleted
+            # self._updateCompositionView()
 
             if self._stageView:
                 self._stageView.updateSelection()
@@ -3237,50 +3258,54 @@ class AppController(QtCore.QObject):
         Updates any UI that relies on the selection state.
         """
         self._updateAgentMessageSelection()
-        self._populateUserPrompt()
-        self._updateUserPrompt()
+        # _populateUserPrompt removed since userPrompt UI was deleted
+        # self._populateUserPrompt()
+        # self._updateUserPrompt()
 
-    def _populateUserPrompt(self):
+    # def _populateUserPrompt(self):
 
-        focusPrimPath = None
-        focusPropName = None
+    #     focusPrimPath = None
+    #     focusPropName = None
 
-        focusProp = self._dataModel.selection.getFocusProp()
-        if focusProp is None:
-            focusPrimPath, focusPropName = (
-                self._dataModel.selection.getFocusComputedPropPath())
-        else:
-            focusPrimPath = focusProp.GetPrimPath()
-            focusPropName = focusProp.GetName()
+    #     focusProp = self._dataModel.selection.getFocusProp()
+    #     if focusProp is None:
+    #         focusPrimPath, focusPropName = (
+    #             self._dataModel.selection.getFocusComputedPropPath())
+    #     else:
+    #         focusPrimPath = focusProp.GetPrimPath()
+    #         focusPropName = focusProp.GetName()
 
-        if focusPropName is not None:
-            # inform the value editor that we selected a new attribute
-            self._ui.attributeValueEditor.populate(focusPrimPath, focusPropName)
-        else:
-            self._ui.attributeValueEditor.clear()
+    #     if focusPropName is not None:
+    #         # inform the value editor that we selected a new attribute
+    #         self._ui.attributeValueEditor.populate(focusPrimPath, focusPropName)
+    #     else:
+    #         self._ui.attributeValueEditor.clear()
 
-    def _onCompositionSelectionChanged(self, curr=None, prev=None):
-        self._currentSpec = getattr(curr, 'spec', None)
-        self._currentLayer = getattr(curr, 'layer', None)
+    # _onCompositionSelectionChanged method removed since compositionTreeWidget UI was deleted
+    # def _onCompositionSelectionChanged(self, curr=None, prev=None):
+    #     self._currentSpec = getattr(curr, 'spec', None)
+    #     self._currentLayer = getattr(curr, 'layer', None)
 
-    def _updateUserPrompt(self, index=None, obj=None):
-        # index must be the first parameter since this method is used as
-        # userPrompt tab widget's currentChanged(int) signal callback
-        if index is None:
-            index = self._ui.userPrompt.currentIndex()
+    # def _updateUserPrompt(self, index=None, obj=None):
+    #     # index must be the first parameter since this method is used as
+    #     # userPrompt tab widget's currentChanged(int) signal callback
+    #     if index is None:
+    #         index = self._ui.userPrompt.currentIndex()
 
-        if obj is None:
-            obj = self._getSelectedObject()
+    #     if obj is None:
+    #         obj = self._getSelectedObject()
 
-        if index == PropertyIndex.METADATA:
-            self._updateMetadataView(obj)
-        elif index == PropertyIndex.LAYERSTACK:
-            self._updateLayerStackView(obj)
-        elif index == PropertyIndex.COMPOSITION:
-            self._updateCompositionView(obj)
+    #     if index == PropertyIndex.METADATA:
+    #         self._updateMetadataView(obj)
+    #     elif index == PropertyIndex.LAYERSTACK:
+    #         self._updateLayerStackView(obj)
+    #     elif index == PropertyIndex.COMPOSITION:
+    #         self._updateCompositionView(obj)
 
     def _refreshAttributeValue(self):
-        self._ui.attributeValueEditor.refresh()
+        # attributeValueEditor removed from UI
+        # self._ui.attributeValueEditor.refresh()
+        pass
 
     def _agentMessageContextMenu(self, point):
         item = self._ui.agentMessage.itemAt(point)
@@ -3290,15 +3315,19 @@ class AppController(QtCore.QObject):
             self.contextMenu.exec_(QtGui.QCursor.pos())
 
     def _layerStackContextMenu(self, point):
-        item = self._ui.layerStackView.itemAt(point)
-        if item:
-            self.contextMenu = LayerStackContextMenu(self._mainWindow, item)
-            self.contextMenu.exec_(QtGui.QCursor.pos())
+        # item = self._ui.layerStackView.itemAt(point)
+        # layerStackView removed from UI - context menu disabled
+        # if item:
+        #     self.contextMenu = LayerStackContextMenu(self._mainWindow, item)
+        #     self.contextMenu.exec_(QtGui.QCursor.pos())
+        pass
 
     def _compositionTreeContextMenu(self, point):
-        item = self._ui.compositionTreeWidget.itemAt(point)
-        self.contextMenu = LayerStackContextMenu(self._mainWindow, item)
-        self.contextMenu.exec_(QtGui.QCursor.pos())
+        # item = self._ui.compositionTreeWidget.itemAt(point)
+        # compositionTreeWidget removed from UI - context menu disabled
+        # self.contextMenu = LayerStackContextMenu(self._mainWindow, item)
+        # self.contextMenu.exec_(QtGui.QCursor.pos())
+        pass
 
     # Headers & Columns =================================================
     def _agentMessageHeaderContextMenu(self, point):
@@ -3875,7 +3904,8 @@ class AppController(QtCore.QObject):
 
         # value sources of an attribute can change upon frame change
         # due to value clips, so we must update the layer stack.
-        self._updateLayerStackView()
+        # _updateLayerStackView removed since layerStackView UI was deleted
+        # self._updateLayerStackView()
 
         # refresh the visibility column
         self._resetPrimViewVis(selItemsOnly=False, authoredVisHasChanged=False)
@@ -4166,389 +4196,392 @@ class AppController(QtCore.QObject):
                     self._limitToolTipSize(ttStr, isList))
         return valStr, ttStr
 
-    def _updateMetadataView(self, obj=None):
-        """ Sets the contents of the metadata viewer"""
+    # _updateMetadataView method removed since metadataView UI was deleted
+    # def _updateMetadataView(self, obj=None):
+    #     """ Sets the contents of the metadata viewer"""
+    # 
+    #     # XXX: this method gets called multiple times on selection, it
+    #     # would be nice to clean that up and ensure we only update as needed.
+    # 
+    #     tableWidget = self._ui.metadataView
+    #     self._propertiesDict = self._getPropertiesDict()
+    # 
+    #     # Setup table widget
+    #     tableWidget.clearContents()
+    #     tableWidget.setRowCount(0)
+    # 
+    #     if obj is None:
+    #         obj = self._getSelectedObject()
+    # 
+    #     if not obj:
+    #         return
+    # 
+    #     m = obj.GetAllMetadata()
+    # 
+    #     # We have to explicitly add in metadata related to composition arcs
+    #     # and value clips here, since GetAllMetadata prunes them out.
+    #     #
+    #     # XXX: Would be nice to have some official facility to query
+    #     # this.
+    #     compKeys = [# composition related metadata (inherits handled below)
+    #                 "references", "specializes",
+    #                 "payload", "subLayers"]
+    # 
+    #     for k in compKeys:
+    #         v = obj.GetMetadata(k)
+    #         if not v is None:
+    #             m[k] = v
+    # 
+    #     m["clips"] = obj.GetMetadata("clips") or {}
+    # 
+    #     # Variant selections that don't have a defined variant set will be 
+    #     # displayed as well to aid debugging. Collect them separately from
+    #     # the variant sets.
+    #     variantSets = {}
+    #     setlessVariantSelections = {}
+    #     if (isinstance(obj, Usd.Prim)):
+    #         # Get the inherits via API instead of the "inheritPaths" metadata
+    #         # which can be incomplete.
+    #         inheritPaths = obj.GetInherits().GetAllDirectInherits()
+    #         if inheritPaths:
+    #             m["inherits"] = inheritPaths
+    # 
+    #         # Get all variant selections as setless and remove the ones we find
+    #         # sets for.
+    #         setlessVariantSelections = obj.GetVariantSets().GetAllVariantSelections()
+    # 
+    #         variantSetNames = obj.GetVariantSets().GetNames()
+    #         for variantSetName in variantSetNames:
+    #             variantSet = obj.GetVariantSet(variantSetName)
+    #             variantNames = variantSet.GetVariantNames()
+    #             variantSelection = variantSet.GetVariantSelection()
+    #             combo = VariantComboBox(None, obj, variantSetName, self._mainWindow)
+    #             # First index is always empty to indicate no (or invalid)
+    #             # variant selection.
+    #             combo.addItem('')
+    #             for variantName in variantNames:
+    #                 combo.addItem(variantName)
+    #             indexToSelect = combo.findText(variantSelection)
+    #             combo.setCurrentIndex(indexToSelect)
+    #             variantSets[variantSetName] = combo
+    #             # Remove found variant set from setless.
+    #             setlessVariantSelections.pop(variantSetName, None)
+    # 
+    #     rowIndex = 0
+    # 
+    #     # Although most metadata should be presented alphabetically,the most 
+    #     # user-facing items should be placed at the beginning of the  metadata 
+    #     # list, these consist of [object type], [path], variant sets, active, 
+    #     # assetInfo, and kind.
+    #     def populateMetadataTable(key, val, rowIndex):
+    #         tableWidget.insertRow(rowIndex)
+    #         attrName = QtWidgets.QTableWidgetItem(str(key))
+    #         tableWidget.setItem(rowIndex, 0, attrName)
+    # 
+    #         valStr, ttStr = self._formatMetadataValueView(val)
+    #         attrVal = QtWidgets.QTableWidgetItem(valStr)
+    #         attrVal.setToolTip(ttStr)
+    # 
+    #         tableWidget.setItem(rowIndex, 1, attrVal)
+    # 
+    #     def populateMetadataTableVariant(key, val, rowIndex):
+    #         tableWidget.insertRow(rowIndex)
+    #         attrName = QtWidgets.QTableWidgetItem(str(key + ' variant'))
+    #         tableWidget.setItem(rowIndex, 0, attrName)
+    #         tableWidget.setCellWidget(rowIndex, 1, val)
+    # 
+    #     sortedKeys = sorted(m.keys())
+    #     reorderedKeys = ["kind", "assetInfo", "active"]
+    # 
+    #     for key in reorderedKeys:
+    #         if key in sortedKeys:
+    #             sortedKeys.remove(key)
+    #             sortedKeys.insert(0, key)
+    # 
+    #     object_type = "Attribute" if type(obj) is Usd.Attribute \
+    #            else "Prim" if type(obj) is Usd.Prim \
+    #            else "Relationship" if type(obj) is Usd.Relationship \
+    #            else "Unknown"
+    #     populateMetadataTable("[object type]", object_type, rowIndex)
+    #     rowIndex += 1
+    # 
+    #     # Represent applied API schemas
+    #     if type(obj) is Usd.Prim:
+    #         populateMetadataTable("[applied API schemas]",
+    #                               str(obj.GetAppliedSchemas()),
+    #                               rowIndex)
+    #         rowIndex += 1
+    # 
+    #     populateMetadataTable("[path]", str(obj.GetPath()), rowIndex)
+    #     rowIndex += 1
+    # 
+    #     for variantSetName, combo in variantSets.items():
+    #         populateMetadataTableVariant(variantSetName, combo, rowIndex)
+    #         combo.currentIndexChanged.connect(
+    #             lambda i, combo=combo:
+    #             combo.updateVariantSelection(i, self._makeTimer))
+    #         rowIndex += 1
+    # 
+    #     # Add all the setless variant selections directly after the variant 
+    #     # combo boxes
+    #     for variantSetName, variantSelection in setlessVariantSelections.items():
+    #         valStr, ttStr = self._formatMetadataValueView(variantSelection)
+    #         # Italicized label to stand out when debugging a scene.
+    #         label = QtWidgets.QLabel('<i>' + valStr + '</i>')
+    #         label.setIndent(3)
+    #         label.setToolTip(ttStr)
+    #         populateMetadataTableVariant(variantSetName, label, rowIndex)
+    # 
+    #         rowIndex += 1
+    # 
+    #     for key in sortedKeys:
+    #         if key == "clips":
+    #             for (clip, metadataGroup) in m[key].items():
+    #                 attrName = QtWidgets.QTableWidgetItem(str('clips:' + clip))
+    #                 for i, metadata in enumerate(metadataGroup.keys()):
+    #                     tableWidget.insertRow(rowIndex)
+    #                     if i == 0:
+    #                         tableWidget.setItem(rowIndex, 0, attrName)
+    # 
+    #                     dataPair = (metadata, metadataGroup[metadata])
+    #                     valStr, ttStr = self._formatMetadataValueView(dataPair)
+    #                     attrVal = QtWidgets.QTableWidgetItem(valStr)
+    #                     attrVal.setToolTip(ttStr)
+    #                     tableWidget.setItem(rowIndex, 1, attrVal)
+    #                     rowIndex += 1
+    #         elif key == "customData":
+    #             populateMetadataTable(key, obj.GetCustomData(), rowIndex)
+    #             rowIndex += 1
+    #         else:
+    #             populateMetadataTable(key, m[key], rowIndex)
+    #             rowIndex += 1
+    # 
+    # 
+    #     tableWidget.resizeColumnToContents(0)
 
-        # XXX: this method gets called multiple times on selection, it
-        # would be nice to clean that up and ensure we only update as needed.
+    # _updateCompositionView method removed since compositionTreeWidget UI was deleted
+    # def _updateCompositionView(self, obj=None):
+    #     """ Sets the contents of the composition tree view"""
+    #     treeWidget = self._ui.compositionTreeWidget
+    #     treeWidget.clear()
+    # 
+    #     # Update current spec & current layer, and push those updates
+    #     # to the python console
+    #     self._onCompositionSelectionChanged()
+    # 
+    #     # If no prim or attribute selected, nothing to show.
+    #     if obj is None:
+    #         obj = self._getSelectedObject()
+    #     if not obj:
+    #         return
+    # 
+    #     # For brevity, we display only the basename of layer paths.
+    #     def LabelForLayer(l):
+    #         return ('~session~' if l == self._dataModel.stage.GetSessionLayer()
+    #                 else l.GetDisplayName())
+    # 
+    #     # Create treeview items for all sublayers in the layer tree.
+    #     def WalkSublayers(parent, node, layerTree, sublayer=False):
+    #         layer = layerTree.layer
+    #         spec = layer.GetObjectAtPath(node.path)
+    #         item = QtWidgets.QTreeWidgetItem(
+    #             parent,
+    #             [
+    #                 LabelForLayer(layer),
+    #                 'sublayer' if sublayer else node.arcType.displayName,
+    #                 str(node.GetPathAtIntroduction()),
+    #                 'yes' if bool(spec) else 'no'
+    #             ] )
+    # 
+    #         # attributes for selection:
+    #         item.stage = self._dataModel.stage
+    #         item.layer = layer
+    #         item.spec = spec
+    #         item.identifier = layer.identifier
+    # 
+    #         # attributes for LayerStackContextMenu:
+    #         if layer.realPath:
+    #             item.layerPath = layer.realPath
+    #         if spec:
+    #             item.path = node.path
+    # 
+    #         item.setExpanded(True)
+    #         item.setToolTip(0, layer.identifier)
+    #         if not spec or not node.CanContributeSpecs():
+    #             for i in range(item.columnCount()):
+    #                 item.setForeground(i, UIPropertyValueSourceColors.NONE)
+    #         for subtree in layerTree.childTrees:
+    #             WalkSublayers(item, node, subtree, True)
+    #         return item
+    # 
+    #     # Create treeview items for all nodes in the composition index.
+    #     def WalkNodes(parent, node):
+    #         nodeItem = WalkSublayers(parent, node, node.layerStack.layerTree)
+    #         for child in node.children:
+    #             WalkNodes(nodeItem, child)
+    # 
+    #     path = obj.GetPath().GetAbsoluteRootOrPrimPath()
+    #     prim = self._dataModel.stage.GetPrimAtPath(path)
+    #     if not prim:
+    #         return
+    # 
+    #     # Populate the treeview with items from the prim index.
+    #     index = prim.GetPrimIndex()
+    #     if index.IsValid():
+    #         WalkNodes(treeWidget, index.rootNode)
 
-        tableWidget = self._ui.metadataView
-        self._propertiesDict = self._getPropertiesDict()
-
-        # Setup table widget
-        tableWidget.clearContents()
-        tableWidget.setRowCount(0)
-
-        if obj is None:
-            obj = self._getSelectedObject()
-
-        if not obj:
-            return
-
-        m = obj.GetAllMetadata()
-
-        # We have to explicitly add in metadata related to composition arcs
-        # and value clips here, since GetAllMetadata prunes them out.
-        #
-        # XXX: Would be nice to have some official facility to query
-        # this.
-        compKeys = [# composition related metadata (inherits handled below)
-                    "references", "specializes",
-                    "payload", "subLayers"]
-
-        for k in compKeys:
-            v = obj.GetMetadata(k)
-            if not v is None:
-                m[k] = v
-
-        m["clips"] = obj.GetMetadata("clips") or {}
-
-        # Variant selections that don't have a defined variant set will be 
-        # displayed as well to aid debugging. Collect them separately from
-        # the variant sets.
-        variantSets = {}
-        setlessVariantSelections = {}
-        if (isinstance(obj, Usd.Prim)):
-            # Get the inherits via API instead of the "inheritPaths" metadata
-            # which can be incomplete.
-            inheritPaths = obj.GetInherits().GetAllDirectInherits()
-            if inheritPaths:
-                m["inherits"] = inheritPaths
-
-            # Get all variant selections as setless and remove the ones we find
-            # sets for.
-            setlessVariantSelections = obj.GetVariantSets().GetAllVariantSelections()
-
-            variantSetNames = obj.GetVariantSets().GetNames()
-            for variantSetName in variantSetNames:
-                variantSet = obj.GetVariantSet(variantSetName)
-                variantNames = variantSet.GetVariantNames()
-                variantSelection = variantSet.GetVariantSelection()
-                combo = VariantComboBox(None, obj, variantSetName, self._mainWindow)
-                # First index is always empty to indicate no (or invalid)
-                # variant selection.
-                combo.addItem('')
-                for variantName in variantNames:
-                    combo.addItem(variantName)
-                indexToSelect = combo.findText(variantSelection)
-                combo.setCurrentIndex(indexToSelect)
-                variantSets[variantSetName] = combo
-                # Remove found variant set from setless.
-                setlessVariantSelections.pop(variantSetName, None)
-
-        rowIndex = 0
-
-        # Although most metadata should be presented alphabetically,the most 
-        # user-facing items should be placed at the beginning of the  metadata 
-        # list, these consist of [object type], [path], variant sets, active, 
-        # assetInfo, and kind.
-        def populateMetadataTable(key, val, rowIndex):
-            tableWidget.insertRow(rowIndex)
-            attrName = QtWidgets.QTableWidgetItem(str(key))
-            tableWidget.setItem(rowIndex, 0, attrName)
-
-            valStr, ttStr = self._formatMetadataValueView(val)
-            attrVal = QtWidgets.QTableWidgetItem(valStr)
-            attrVal.setToolTip(ttStr)
-
-            tableWidget.setItem(rowIndex, 1, attrVal)
-
-        def populateMetadataTableVariant(key, val, rowIndex):
-            tableWidget.insertRow(rowIndex)
-            attrName = QtWidgets.QTableWidgetItem(str(key + ' variant'))
-            tableWidget.setItem(rowIndex, 0, attrName)
-            tableWidget.setCellWidget(rowIndex, 1, val)
-
-        sortedKeys = sorted(m.keys())
-        reorderedKeys = ["kind", "assetInfo", "active"]
-
-        for key in reorderedKeys:
-            if key in sortedKeys:
-                sortedKeys.remove(key)
-                sortedKeys.insert(0, key)
-
-        object_type = "Attribute" if type(obj) is Usd.Attribute \
-               else "Prim" if type(obj) is Usd.Prim \
-               else "Relationship" if type(obj) is Usd.Relationship \
-               else "Unknown"
-        populateMetadataTable("[object type]", object_type, rowIndex)
-        rowIndex += 1
-
-        # Represent applied API schemas
-        if type(obj) is Usd.Prim:
-            populateMetadataTable("[applied API schemas]",
-                                  str(obj.GetAppliedSchemas()),
-                                  rowIndex)
-            rowIndex += 1
-
-        populateMetadataTable("[path]", str(obj.GetPath()), rowIndex)
-        rowIndex += 1
-
-        for variantSetName, combo in variantSets.items():
-            populateMetadataTableVariant(variantSetName, combo, rowIndex)
-            combo.currentIndexChanged.connect(
-                lambda i, combo=combo:
-                combo.updateVariantSelection(i, self._makeTimer))
-            rowIndex += 1
-
-        # Add all the setless variant selections directly after the variant 
-        # combo boxes
-        for variantSetName, variantSelection in setlessVariantSelections.items():
-            valStr, ttStr = self._formatMetadataValueView(variantSelection)
-            # Italicized label to stand out when debugging a scene.
-            label = QtWidgets.QLabel('<i>' + valStr + '</i>')
-            label.setIndent(3)
-            label.setToolTip(ttStr)
-            populateMetadataTableVariant(variantSetName, label, rowIndex)
-
-            rowIndex += 1
-
-        for key in sortedKeys:
-            if key == "clips":
-                for (clip, metadataGroup) in m[key].items():
-                    attrName = QtWidgets.QTableWidgetItem(str('clips:' + clip))
-                    for i, metadata in enumerate(metadataGroup.keys()):
-                        tableWidget.insertRow(rowIndex)
-                        if i == 0:
-                            tableWidget.setItem(rowIndex, 0, attrName)
-
-                        dataPair = (metadata, metadataGroup[metadata])
-                        valStr, ttStr = self._formatMetadataValueView(dataPair)
-                        attrVal = QtWidgets.QTableWidgetItem(valStr)
-                        attrVal.setToolTip(ttStr)
-                        tableWidget.setItem(rowIndex, 1, attrVal)
-                        rowIndex += 1
-            elif key == "customData":
-                populateMetadataTable(key, obj.GetCustomData(), rowIndex)
-                rowIndex += 1
-            else:
-                populateMetadataTable(key, m[key], rowIndex)
-                rowIndex += 1
-
-
-        tableWidget.resizeColumnToContents(0)
-
-    def _updateCompositionView(self, obj=None):
-        """ Sets the contents of the composition tree view"""
-        treeWidget = self._ui.compositionTreeWidget
-        treeWidget.clear()
-
-        # Update current spec & current layer, and push those updates
-        # to the python console
-        self._onCompositionSelectionChanged()
-
-        # If no prim or attribute selected, nothing to show.
-        if obj is None:
-            obj = self._getSelectedObject()
-        if not obj:
-            return
-
-        # For brevity, we display only the basename of layer paths.
-        def LabelForLayer(l):
-            return ('~session~' if l == self._dataModel.stage.GetSessionLayer()
-                    else l.GetDisplayName())
-
-        # Create treeview items for all sublayers in the layer tree.
-        def WalkSublayers(parent, node, layerTree, sublayer=False):
-            layer = layerTree.layer
-            spec = layer.GetObjectAtPath(node.path)
-            item = QtWidgets.QTreeWidgetItem(
-                parent,
-                [
-                    LabelForLayer(layer),
-                    'sublayer' if sublayer else node.arcType.displayName,
-                    str(node.GetPathAtIntroduction()),
-                    'yes' if bool(spec) else 'no'
-                ] )
-
-            # attributes for selection:
-            item.stage = self._dataModel.stage
-            item.layer = layer
-            item.spec = spec
-            item.identifier = layer.identifier
-
-            # attributes for LayerStackContextMenu:
-            if layer.realPath:
-                item.layerPath = layer.realPath
-            if spec:
-                item.path = node.path
-
-            item.setExpanded(True)
-            item.setToolTip(0, layer.identifier)
-            if not spec or not node.CanContributeSpecs():
-                for i in range(item.columnCount()):
-                    item.setForeground(i, UIPropertyValueSourceColors.NONE)
-            for subtree in layerTree.childTrees:
-                WalkSublayers(item, node, subtree, True)
-            return item
-
-        # Create treeview items for all nodes in the composition index.
-        def WalkNodes(parent, node):
-            nodeItem = WalkSublayers(parent, node, node.layerStack.layerTree)
-            for child in node.children:
-                WalkNodes(nodeItem, child)
-
-        path = obj.GetPath().GetAbsoluteRootOrPrimPath()
-        prim = self._dataModel.stage.GetPrimAtPath(path)
-        if not prim:
-            return
-
-        # Populate the treeview with items from the prim index.
-        index = prim.GetPrimIndex()
-        if index.IsValid():
-            WalkNodes(treeWidget, index.rootNode)
-
-    def _updateLayerStackView(self, obj=None):
-        """ Sets the contents of the layer stack viewer"""
-
-        tableWidget = self._ui.layerStackView
-
-        def createLayerStackViewItem(displayString, layerInfo, 
-                                      spec=None, toolTip=""):
-            """Creates a table view item for the layer stack view widget"""
-            item = QtWidgets.QTableWidgetItem(displayString)
-            item.setToolTip(self._limitToolTipSize(toolTip))
-            if layerInfo.IsMuted():
-                mutedLayerColor = QtGui.QColor(151, 151, 151)
-                item.setForeground(QtGui.QBrush(mutedLayerColor))
-
-            # Set layer and stage info for the context menu. The non-pseudoroot 
-            # layer stack views also provide a spec path for the context
-            item.stage = self._dataModel.stage
-            item.layerPath = layerInfo.GetRealPath()
-            item.identifier = layerInfo.GetIdentifier()
-            if spec is not None:
-                item.path = spec.path.pathString
-
-            return item
-
-        def addLayerItem(rowNum, layerInfo):
-            layerItem = createLayerStackViewItem(
-                layerInfo.GetHierarchicalDisplayString(), layerInfo, 
-                toolTip = layerInfo.GetToolTipString())
-            tableWidget.setItem(
-                rowNum, LayerStackViewColumnIndex.LAYER, layerItem)
-
-        def addOffsetItem(rowNum, layerInfo):
-            offsetItem = createLayerStackViewItem(
-                layerInfo.GetOffsetString(), layerInfo, 
-                toolTip = layerInfo.GetOffsetTooltipString())
-            tableWidget.setItem(
-                rowNum, LayerStackViewColumnIndex.OFFSET, offsetItem)
-
-        def addSpecPathItem(rowNum, layerInfo, spec):
-            pathItem = createLayerStackViewItem(spec.path.pathString, layerInfo, 
-                spec = spec, toolTip = spec.path.pathString)
-            tableWidget.setItem(
-                rowNum, LayerStackViewColumnIndex.PATH, pathItem)
-
-        def addMetadataItem(rowNum, layerInfo, spec):
-            metadataKeys = spec.GetMetaDataInfoKeys()
-            metadataDict = {}
-            for mykey in metadataKeys:
-                if spec.HasInfo(mykey):
-                    metadataDict[mykey] = spec.GetInfo(mykey)
-            valStr, ttStr = self._formatMetadataValueView(metadataDict)
-
-            valueItem = createLayerStackViewItem(valStr, layerInfo, 
-                spec = spec, toolTip = ttStr)
-            tableWidget.setItem(
-                rowNum, LayerStackViewColumnIndex.VALUE, valueItem)
-
-        def addSpecValueItem(rowNum, layerInfo, spec):
-            _, valStr = GetValueAndDisplayString(spec, 
-                                            self._dataModel.currentFrame)
-            valueItem = createLayerStackViewItem(valStr, layerInfo, 
-                spec = spec, toolTip = valStr)
-            sampleBased = spec.layer.GetNumTimeSamplesForPath(spec.path) > 0
-            valueItemColor = (UIPropertyValueSourceColors.TIME_SAMPLE if
-                sampleBased else UIPropertyValueSourceColors.DEFAULT)
-            valueItem.setForeground(valueItemColor)
-            tableWidget.setItem(
-                rowNum, LayerStackViewColumnIndex.VALUE, valueItem)
-
-        # Clear table widget
-        tableWidget.clearContents()
-        tableWidget.setRowCount(0)
-
-        if obj is None:
-            obj = self._getSelectedObject()
-        if not obj:
-            return
-
-        path = obj.GetPath()
-        isPseudoRoot = (path == Sdf.Path.absoluteRootPath)
-        isProperty = path.IsPropertyPath()
-
-        layers = None
-        specsAndLayerOffsets = None
-        # valueColumnHeader = "Value"
-        if isPseudoRoot:
-            # For the pseudoRoot, get the layers from the root layer stack
-            layers = GetRootLayerStackInfo(self._dataModel.stage)
-        else:
-            # Otherwise we get the specs (and layer offsets) from the prim or
-            # property stack. Note that the layer offsets are the cumulative 
-            # offsets of the spec's layer relative to the root of the stage.
-            if isProperty:
-                specsAndLayerOffsets = obj.GetPropertyStackWithLayerOffsets(
-                    self._dataModel.currentFrame)
-            else:
-                specsAndLayerOffsets = obj.GetPrimStackWithLayerOffsets()
-            # We get the layer info from each prim or property spec and its 
-            # computed layer offset
-            layers = [
-                LayerInfo.FromLayer(spec.layer, self._dataModel.stage, offset) 
-                for spec, offset in specsAndLayerOffsets]
-
-        tableWidget.setRowCount(len(layers))
-        # While adding layers we'll determine if we should hide the offset 
-        # column. By default we always display it for the pseudoRoot. We'll
-        # only display it for prims and properties if at least one spec has a 
-        # non-identity layer offset.
-        hideOffsetColumn = not isPseudoRoot
-        hideSpecColumns = isPseudoRoot
-        for i, layer in enumerate(layers):
-            if not layer.GetOffset().IsIdentity():
-                hideOffsetColumn = False
-
-            # Always add the layer and offset items.
-            addLayerItem(i, layer)
-            addOffsetItem(i, layer)
-
-            # Add the items for the spec columns if needed.
-            if not hideSpecColumns:
-                spec = specsAndLayerOffsets[i][0]
-                addSpecPathItem(i, layer, spec)
-                # The value column for prims shows metadata instead of property
-                # values.
-                if isProperty:
-                    addSpecValueItem(i, layer, spec)
-                else:
-                    addMetadataItem(i, layer, spec)
-
-        # Set the hidden state of the dynamically visible columns.
-        tableWidget.setColumnHidden(LayerStackViewColumnIndex.OFFSET, 
-                                    hideOffsetColumn)
-        tableWidget.setColumnHidden(LayerStackViewColumnIndex.PATH,
-                                    hideSpecColumns)
-        tableWidget.setColumnHidden(LayerStackViewColumnIndex.VALUE,
-                                    hideSpecColumns)
-
-        # Some final formatting for the spec columns if shown.
-        if not hideSpecColumns:
-            # The value column's header adjusts for whether we're showing prim,
-            # attribute, or relationship layer stack.
-            valueColumnHeader = "Value" if isinstance(obj, Usd.Attribute) \
-                else "Target Paths" if isinstance(obj, Usd.Relationship) \
-                else "Metadata"
-            tableWidget.horizontalHeaderItem(LayerStackViewColumnIndex.VALUE) \
-                .setText(valueColumnHeader)
-
-            # Resize the value column to its contents so that display updates
-            # appropriately when switching between selected properties and 
-            # prims.
-            tableWidget.resizeColumnToContents(LayerStackViewColumnIndex.VALUE)
+    # _updateLayerStackView method removed since layerStackView UI was deleted
+    # def _updateLayerStackView(self, obj=None):
+    #     """ Sets the contents of the layer stack viewer"""
+    # 
+    #     tableWidget = self._ui.layerStackView
+    # 
+    #     def createLayerStackViewItem(displayString, layerInfo, 
+    #                                   spec=None, toolTip=""):
+    #         """Creates a table view item for the layer stack view widget"""
+    #         item = QtWidgets.QTableWidgetItem(displayString)
+    #         item.setToolTip(self._limitToolTipSize(toolTip))
+    #         if layerInfo.IsMuted():
+    #             mutedLayerColor = QtGui.QColor(151, 151, 151)
+    #             item.setForeground(QtGui.QBrush(mutedLayerColor))
+    # 
+    #         # Set layer and stage info for the context menu. The non-pseudoroot 
+    #         # layer stack views also provide a spec path for the context
+    #         item.stage = self._dataModel.stage
+    #         item.layerPath = layerInfo.GetRealPath()
+    #         item.identifier = layerInfo.GetIdentifier()
+    #         if spec is not None:
+    #             item.path = spec.path.pathString
+    # 
+    #         return item
+    # 
+    #     def addLayerItem(rowNum, layerInfo):
+    #         layerItem = createLayerStackViewItem(
+    #             layerInfo.GetHierarchicalDisplayString(), layerInfo, 
+    #             toolTip = layerInfo.GetToolTipString())
+    #         tableWidget.setItem(
+    #             rowNum, LayerStackViewColumnIndex.LAYER, layerItem)
+    # 
+    #     def addOffsetItem(rowNum, layerInfo):
+    #         offsetItem = createLayerStackViewItem(
+    #             layerInfo.GetOffsetString(), layerInfo, 
+    #             toolTip = layerInfo.GetOffsetTooltipString())
+    #         tableWidget.setItem(
+    #             rowNum, LayerStackViewColumnIndex.OFFSET, offsetItem)
+    # 
+    #     def addSpecPathItem(rowNum, layerInfo, spec):
+    #         pathItem = createLayerStackViewItem(spec.path.pathString, layerInfo, 
+    #             spec = spec, toolTip = spec.path.pathString)
+    #         tableWidget.setItem(
+    #             rowNum, LayerStackViewColumnIndex.PATH, pathItem)
+    # 
+    #     def addMetadataItem(rowNum, layerInfo, spec):
+    #         metadataKeys = spec.GetMetaDataInfoKeys()
+    #         metadataDict = {}
+    #         for mykey in metadataKeys:
+    #             if spec.HasInfo(mykey):
+    #                 metadataDict[mykey] = spec.GetInfo(mykey)
+    #         valStr, ttStr = self._formatMetadataValueView(metadataDict)
+    # 
+    #         valueItem = createLayerStackViewItem(valStr, layerInfo, 
+    #             spec = spec, toolTip = ttStr)
+    #         tableWidget.setItem(
+    #             rowNum, LayerStackViewColumnIndex.VALUE, valueItem)
+    # 
+    #     def addSpecValueItem(rowNum, layerInfo, spec):
+    #         _, valStr = GetValueAndDisplayString(spec, 
+    #                                         self._dataModel.currentFrame)
+    #         valueItem = createLayerStackViewItem(valStr, layerInfo, 
+    #             spec = spec, toolTip = valStr)
+    #         sampleBased = spec.layer.GetNumTimeSamplesForPath(spec.path) > 0
+    #         valueItemColor = (UIPropertyValueSourceColors.TIME_SAMPLE if
+    #             sampleBased else UIPropertyValueSourceColors.DEFAULT)
+    #         valueItem.setForeground(valueItemColor)
+    #         tableWidget.setItem(
+    #             rowNum, LayerStackViewColumnIndex.VALUE, valueItem)
+    # 
+    #     # Clear table widget
+    #     tableWidget.clearContents()
+    #     tableWidget.setRowCount(0)
+    # 
+    #     if obj is None:
+    #         obj = self._getSelectedObject()
+    #     if not obj:
+    #         return
+    # 
+    #     path = obj.GetPath()
+    #     isPseudoRoot = (path == Sdf.Path.absoluteRootPath)
+    #     isProperty = path.IsPropertyPath()
+    # 
+    #     layers = None
+    #     specsAndLayerOffsets = None
+    #     # valueColumnHeader = "Value"
+    #     if isPseudoRoot:
+    #         # For the pseudoRoot, get the layers from the root layer stack
+    #         layers = GetRootLayerStackInfo(self._dataModel.stage)
+    #     else:
+    #         # Otherwise we get the specs (and layer offsets) from the prim or
+    #         # property stack. Note that the layer offsets are the cumulative 
+    #         # offsets of the spec's layer relative to the root of the stage.
+    #         if isProperty:
+    #             specsAndLayerOffsets = obj.GetPropertyStackWithLayerOffsets(
+    #                 self._dataModel.currentFrame)
+    #         else:
+    #             specsAndLayerOffsets = obj.GetPrimStackWithLayerOffsets()
+    #         # We get the layer info from each prim or property spec and its 
+    #         # computed layer offset
+    #         layers = [
+    #             LayerInfo.FromLayer(spec.layer, self._dataModel.stage, offset) 
+    #             for spec, offset in specsAndLayerOffsets]
+    # 
+    #     tableWidget.setRowCount(len(layers))
+    #     # While adding layers we'll determine if we should hide the offset 
+    #     # column. By default we always display it for the pseudoRoot. We'll
+    #     # only display it for prims and properties if at least one spec has a 
+    #     # non-identity layer offset.
+    #     hideOffsetColumn = not isPseudoRoot
+    #     hideSpecColumns = isPseudoRoot
+    #     for i, layer in enumerate(layers):
+    #         if not layer.GetOffset().IsIdentity():
+    #             hideOffsetColumn = False
+    # 
+    #         # Always add the layer and offset items.
+    #         addLayerItem(i, layer)
+    #         addOffsetItem(i, layer)
+    # 
+    #         # Add the items for the spec columns if needed.
+    #         if not hideSpecColumns:
+    #             spec = specsAndLayerOffsets[i][0]
+    #             addSpecPathItem(i, layer, spec)
+    #             # The value column for prims shows metadata instead of property
+    #             # values.
+    #             if isProperty:
+    #                 addSpecValueItem(i, layer, spec)
+    #             else:
+    #                 addMetadataItem(i, layer, spec)
+    # 
+    #     # Set the hidden state of the dynamically visible columns.
+    #     tableWidget.setColumnHidden(LayerStackViewColumnIndex.OFFSET, 
+    #                                 hideOffsetColumn)
+    #     tableWidget.setColumnHidden(LayerStackViewColumnIndex.PATH,
+    #                                 hideSpecColumns)
+    #     tableWidget.setColumnHidden(LayerStackViewColumnIndex.VALUE,
+    #                                 hideSpecColumns)
+    # 
+    #     # Some final formatting for the spec columns if shown.
+    #     if not hideSpecColumns:
+    #         # The value column's header adjusts for whether we're showing prim,
+    #         # attribute, or relationship layer stack.
+    #         valueColumnHeader = "Value" if isinstance(obj, Usd.Attribute) \
+    #             else "Target Paths" if isinstance(obj, Usd.Relationship) \
+    #             else "Metadata"
+    #         tableWidget.horizontalHeaderItem(LayerStackViewColumnIndex.VALUE) \
+    #             .setText(valueColumnHeader)
+    # 
+    #         # Resize the value column to its contents so that display updates
+    #         # appropriately when switching between selected properties and 
+    #         # prims.
+    #         tableWidget.resizeColumnToContents(LayerStackViewColumnIndex.VALUE)
 
     def _isHUDVisible(self):
         """Checks if the upper HUD is visible by looking at the global HUD
