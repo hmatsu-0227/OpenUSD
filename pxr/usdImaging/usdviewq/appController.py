@@ -21,7 +21,7 @@ from collections import deque, OrderedDict
 from functools import cmp_to_key
 
 # Usd Library Components
-from pxr import Usd, UsdGeom, UsdShade, UsdUtils, UsdImagingGL, Glf, Sdf, Tf, Ar
+from pxr import Usd, UsdGeom, UsdShade, UsdUtils, UsdImagingGL, Glf, Sdf, Tf, Ar, Gf
 from pxr import UsdAppUtils
 from pxr.UsdAppUtils.complexityArgs import RefinementComplexities
 from pxr.UsdUtils.constantsGroup import ConstantsGroup
@@ -140,8 +140,9 @@ class UIStateProxySource(StateSource):
         primViewColumnVisibility = self.stateProperty("primViewColumnVisibility",
                 default=[True, True, True, True, False], validator=lambda value: 
                 len(value) == 5)
-        agentMessageColumnVisibility = self.stateProperty("agentMessageColumnVisibility",
-                default=[True, True, True], validator=lambda value: len(value) == 3)
+        # Agent Message is now QTextEdit, no longer needs column visibility settings
+        # agentMessageColumnVisibility = self.stateProperty("agentMessageColumnVisibility",
+        #         default=[True, True, True], validator=lambda value: len(value) == 3)
         attributeInspectorCurrentTab = self.stateProperty("userPromptCurrentTab", default=PropertyIndex.VALUE)
 
         # UI is different when --norender is used so just save the default splitter sizes.
@@ -176,8 +177,9 @@ class UIStateProxySource(StateSource):
 
         for i, visible in enumerate(primViewColumnVisibility):
             self._mainWindow._ui.primView.setColumnHidden(i, not visible)
-        for i, visible in enumerate(agentMessageColumnVisibility):
-            self._mainWindow._ui.agentMessage.setColumnHidden(i, not visible)
+        # Agent Message is now a QTextEdit, column operations not applicable
+        # for i, visible in enumerate(agentMessageColumnVisibility):
+        #     self._mainWindow._ui.agentMessage.setColumnHidden(i, not visible)
 
         propertyIndex = attributeInspectorCurrentTab
         if propertyIndex not in PropertyIndex:
@@ -216,9 +218,11 @@ class UIStateProxySource(StateSource):
         state["primViewColumnVisibility"] = [
             not self._mainWindow._ui.primView.isColumnHidden(c)
             for c in range(self._mainWindow._ui.primView.columnCount())]
-        state["agentMessageColumnVisibility"] = [
-            not self._mainWindow._ui.agentMessage.isColumnHidden(c)
-            for c in range(self._mainWindow._ui.agentMessage.columnCount())]
+        # Agent Message is now a QTextEdit, no column visibility state to save
+        # state["agentMessageColumnVisibility"] = []
+        # state["agentMessageColumnVisibility"] = [
+        #     not self._mainWindow._ui.agentMessage.isColumnHidden(c)
+        #     for c in range(self._mainWindow._ui.agentMessage.columnCount())]
 
         state["userPromptCurrentTab"] = self._mainWindow._ui.userPrompt.currentIndex()
 
@@ -570,20 +574,21 @@ class AppController(QtCore.QObject):
             stepValidator.setRange(0.01, 1e7, 2)
             self._ui.stepSize.setValidator(stepValidator)
 
-            # This causes the last column of the agent message view (the value)
-            # to be stretched to fill the available space
-            self._ui.agentMessage.header().setStretchLastSection(True)
-
-            self._ui.agentMessage.setSelectionBehavior(
-                QtWidgets.QAbstractItemView.SelectRows)
+            # Agent Message is now a QTextEdit, tree widget operations not applicable
+            # # This causes the last column of the agent message view (the value)
+            # # to be stretched to fill the available space
+            # self._ui.agentMessage.header().setStretchLastSection(True)
+            
+            # self._ui.agentMessage.setSelectionBehavior(
+            #     QtWidgets.QAbstractItemView.SelectRows)
             self._ui.primView.setSelectionBehavior(
                 QtWidgets.QAbstractItemView.SelectRows)
-            # This allows ctrl and shift clicking for multi-selecting
-            self._ui.agentMessage.setSelectionMode(
-                QtWidgets.QAbstractItemView.ExtendedSelection)
+            # # This allows ctrl and shift clicking for multi-selecting
+            # self._ui.agentMessage.setSelectionMode(
+            #     QtWidgets.QAbstractItemView.ExtendedSelection)
 
-            self._ui.agentMessage.setHorizontalScrollMode(
-                QtWidgets.QAbstractItemView.ScrollPerPixel)
+            # self._ui.agentMessage.setHorizontalScrollMode(
+            #     QtWidgets.QAbstractItemView.ScrollPerPixel)
 
             self._ui.frameSlider.setTracking(
                     self._dataModel.viewSettings.redrawOnScrub)
@@ -684,22 +689,26 @@ class AppController(QtCore.QObject):
                 self._ui.primViewDepthGroup.addAction(action)
 
             # setup animation objects for the primView and agentMessage
-            self._propertyLegendAnim = QtCore.QPropertyAnimation(
-                self._ui.propertyLegendContainer, b"maximumHeight")
+            self._userPromptLegendAnim = QtCore.QPropertyAnimation(
+                self._ui.userPromptContainer, b"maximumHeight")
             self._primLegendAnim = QtCore.QPropertyAnimation(
                 self._ui.primLegendContainer, b"maximumHeight")
 
             # set the context menu policy for the prim browser and agent message
             # headers. This is so we can have a context menu on the
             # headers that allows you to select which columns are visible.
-            self._ui.agentMessage.header()\
-                    .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            # Agent Message is now a QTextEdit, header operations not applicable
+            # self._ui.agentMessage.header()\
+            #         .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self._ui.primView.header()\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
             # Set custom context menu for agent message browser
             self._ui.agentMessage\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            
+            # Make agent message read-only (not editable by user)
+            self._ui.agentMessage.setReadOnly(True)
 
             # Set custom context menu for layer stack browser
             self._ui.layerStackView\
@@ -742,10 +751,11 @@ class AppController(QtCore.QObject):
             nvh.setSectionResizeMode(PrimViewColumnIndex.DRAWMODE,
                 QtWidgets.QHeaderView.Fixed)
 
-            pvh = self._ui.agentMessage.header()
-            pvh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-            pvh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-            pvh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+            # Agent Message is now a QTextEdit, header operations not applicable
+            # pvh = self._ui.agentMessage.header()
+            # pvh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+            # pvh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+            # pvh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
 
             # XXX:
             # To avoid QTBUG-12850 (https://bugreports.qt.io/browse/QTBUG-12850),
@@ -753,8 +763,9 @@ class AppController(QtCore.QObject):
             # QTableWidget widgets in use.
             self._ui.primView.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
-            self._ui.agentMessage.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOn)
+            # Agent Message is now a QTextEdit, scrollbar policy different
+            # self._ui.agentMessage.setHorizontalScrollBarPolicy(
+            #     QtCore.Qt.ScrollBarAlwaysOn)
             self._ui.metadataView.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
             self._ui.layerStackView.setHorizontalScrollBarPolicy(
@@ -909,14 +920,15 @@ class AppController(QtCore.QObject):
             self._ui.userPrompt.currentChanged.connect(
                 self._updateUserPrompt)
 
-            self._ui.agentMessage.itemSelectionChanged.connect(
-                self._agentMessageSelectionChanged)
+            # Agent Message is now a QTextEdit, item selection events not applicable
+            # self._ui.agentMessage.itemSelectionChanged.connect(
+            #     self._agentMessageSelectionChanged)
 
-            self._ui.agentMessage.currentItemChanged.connect(
-                self._agentMessageCurrentItemChanged)
+            # self._ui.agentMessage.currentItemChanged.connect(
+            #     self._agentMessageCurrentItemChanged)
 
-            self._ui.agentMessage.header().customContextMenuRequested.\
-                connect(self._agentMessageHeaderContextMenu)
+            # self._ui.agentMessage.header().customContextMenuRequested.\
+            #     connect(self._agentMessageHeaderContextMenu)
 
             self._ui.agentMessage.customContextMenuRequested.connect(
                 self._agentMessageContextMenu)
@@ -996,16 +1008,18 @@ class AppController(QtCore.QObject):
 
             self._ui.primViewFindNext.clicked.connect(self._primViewFindNext)
 
-            self._ui.attrViewLineEdit.returnPressed.connect(
-                self._ui.attrViewFindNext.click)
+            # Agent Message (formerly Attribute Browser) no longer has search functionality
+            # self._ui.attrViewLineEdit.returnPressed.connect(
+            #     self._ui.attrViewFindNext.click)
 
-            self._ui.attrViewFindNext.clicked.connect(self._attrViewFindNext)
+            # self._ui.attrViewFindNext.clicked.connect(self._attrViewFindNext)
 
             self._ui.primLegendQButton.clicked.connect(
                 self._primLegendToggleCollapse)
 
-            self._ui.propertyLegendQButton.clicked.connect(
-                self._propertyLegendToggleCollapse)
+            # User Prompt doesn't have a legend button
+            # self._ui.userPromptLegendQButton.clicked.connect(
+            #     self._userPromptLegendToggleCollapse)
 
             self._ui.playButton.clicked.connect(self._playClicked)
 
@@ -2372,54 +2386,17 @@ class AppController(QtCore.QObject):
                                 self._ui.primLegendQButton,
                                 self._primLegendAnim)
 
-    def _propertyLegendToggleCollapse(self):
-        ToggleLegendWithBrowser(self._ui.propertyLegendContainer,
-                                self._ui.propertyLegendQButton,
-                                self._propertyLegendAnim)
+    def _userPromptLegendToggleCollapse(self):
+        # User Prompt doesn't have a legend button, so this function is not used
+        # ToggleLegendWithBrowser(self._ui.userPromptContainer,
+        #                         self._ui.userPromptLegendQButton,
+        #                         self._userPromptLegendAnim)
+        pass
 
     def _attrViewFindNext(self):
-        if (self._attrSearchString == self._normalize_unicode(self._ui.attrViewLineEdit.text()) and
-            len(self._attrSearchResults) > 0 and
-            self._lastPrimSearched == self._dataModel.selection.getFocusPrim()):
-
-            # Go to the next result of the currently ongoing search
-            index = self._attrSearchResults.popleft()
-            nextResult = self._ui.agentMessage.model().data(index)
-            item = self._ui.agentMessage.itemFromIndex(index)
-            itemName = nextResult
-
-            selectedProp = self._propertiesDict[itemName]
-            if isinstance(selectedProp, CustomAttribute):
-                self._dataModel.selection.clearProps()
-                self._dataModel.selection.setComputedProp(selectedProp)
-            else:
-                self._dataModel.selection.setProp(selectedProp)
-                self._dataModel.selection.clearComputedProps()
-            self._ui.agentMessage.scrollToItem(item)
-
-            self._attrSearchResults.append(index)
-            self._lastPrimSearched = self._dataModel.selection.getFocusPrim()
-
-            self._ui.attributeValueEditor.populate(
-                self._dataModel.selection.getFocusPrim().GetPath(), itemName)
-            self._updateMetadataView(self._getSelectedObject())
-            self._updateLayerStackView(self._getSelectedObject())
-        else:
-            # Begin a new search
-            self._attrSearchString = self._normalize_unicode(self._ui.attrViewLineEdit.text())
-            
-            search1 = deque(self._ui.agentMessage.model().match(self._ui.agentMessage.model().index(0, 1),
-                PropertyViewDataRoles.NORMALIZED_NAME, self._attrSearchString, -1, QtCore.Qt.MatchContains))
-            search2 = deque(self._ui.agentMessage.model().match(self._ui.agentMessage.model().index(0, 1),
-                PropertyViewDataRoles.NORMALIZED_NAME, self._attrSearchString, -1, QtCore.Qt.MatchRegExp))
-
-            combinedItems = set(search1 + search2)
-            self._attrSearchResults = deque(
-                sorted(combinedItems))
-
-            self._lastPrimSearched = self._dataModel.selection.getFocusPrim()
-            if (len(self._attrSearchResults) > 0):
-                self._attrViewFindNext()
+        # Agent Message is now a QTextEdit, search functionality not applicable
+        # Original search functionality was designed for QTreeWidget
+        pass
 
     @classmethod
     def _outputBaseDirectory(cls):
@@ -3183,23 +3160,13 @@ class AppController(QtCore.QObject):
 
     def _agentMessageSelectionChanged(self):
         """Called whenever property view's selection changes."""
-
-        if self._agentMessageSelectionBlocker.blocked():
-            return
-
-        self._updatePropertiesFromPropertyView()
+        # Agent Message is now a QTextEdit, selection events not applicable
+        pass
 
     def _agentMessageCurrentItemChanged(self, currentItem, lastItem):
-
         """Called whenever property view's current item changes."""
-        if self._agentMessageSelectionBlocker.blocked():
-            return
-
-        # If a selected item becomes the current item, it will not fire a
-        # selection changed signal but we still want to change the property
-        # selection.
-        if currentItem is not None and currentItem.isSelected():
-            self._updatePropertiesFromPropertyView()
+        # Agent Message is now a QTextEdit, item events not applicable
+        pass
 
     def _propSelectionChanged(self):
         """Called whenever the property selection in the data model changes.
@@ -3921,160 +3888,20 @@ class AppController(QtCore.QObject):
 
     def _updateAgentMessageSelection(self):
         """Updates agent message view's selected items to match the data model."""
-
-        focusPrim = self._dataModel.selection.getFocusPrim()
-        propTargets = self._dataModel.selection.getPropTargets()
-        computedProps = self._dataModel.selection.getComputedPropPaths()
-
-        selectedPrimPropNames = dict()
-        selectedPrimPropNames.update({prop.GetName(): targets
-            for prop, targets in propTargets.items()})
-        selectedPrimPropNames.update({propName: set()
-            for primPath, propName in computedProps})
-
-        rootItem = self._ui.agentMessage.invisibleRootItem()
-
-        with self._agentMessageSelectionBlocker:
-            for i in range(rootItem.childCount()):
-                item = rootItem.child(i)
-                propName = str(item.text(PropertyViewIndex.NAME))
-                if propName in selectedPrimPropNames:
-                    item.setSelected(True)
-                    # Select relationships and connections.
-                    targets = {prop.GetPath()
-                        for prop in selectedPrimPropNames[propName]}
-                    for j in range(item.childCount()):
-                        childItem = item.child(j)
-                        targetPath = Sdf.Path(
-                            str(childItem.text(PropertyViewIndex.NAME)))
-                        if targetPath in targets:
-                            childItem.setSelected(True)
-                else:
-                    self._agentMessageDeselectItem(item)
+        # Agent Message is now a QTextEdit, selection operations not applicable
+        pass
 
     def _updateAgentMessageInternal(self):
-        frame = self._dataModel.currentFrame
-        treeWidget = self._ui.agentMessage
-        treeWidget.setTextElideMode(QtCore.Qt.ElideMiddle)
-        scrollPosition = treeWidget.verticalScrollBar().value()
-
-        # get a dictionary of prim attribs/members and store it in self._propertiesDict
-        self._propertiesDict = self._getPropertiesDict()
-        with self._agentMessageSelectionBlocker:
-            treeWidget.clear()
+        # Agent Message is now a QTextEdit, simply display basic information
+        focusPrim = self._dataModel.selection.getFocusPrim()
+        if focusPrim:
+            message = f"Agent Message: Selected prim - {focusPrim.GetPath()}\n"
+            message += f"Prim type: {focusPrim.GetTypeName()}\n"
+            self._ui.agentMessage.setPlainText(message)
+        else:
+            self._ui.agentMessage.setPlainText("Agent Message: No prim selected")
+        
         self._populateUserPrompt()
-
-        curPrimSelection = self._dataModel.selection.getFocusPrim()
-
-        currRow = 0
-        for key, primProperty in self._propertiesDict.items():
-            targets = None
-            isInheritedProperty = isinstance(primProperty, Usd.Property) and \
-                (primProperty.GetPrim() != curPrimSelection)
-            if type(primProperty) == Usd.Attribute:
-                if primProperty.HasAuthoredConnections():
-                    typeContent = PropertyViewIcons.ATTRIBUTE_WITH_CONNECTIONS()
-                    typeRole = PropertyViewDataRoles.ATTRIBUTE_WITH_CONNNECTIONS
-                    targets = primProperty.GetConnections()
-                else:
-                    typeContent = PropertyViewIcons.ATTRIBUTE()
-                    typeRole = PropertyViewDataRoles.ATTRIBUTE
-            elif isinstance(primProperty, ResolvedBoundMaterial):
-                typeContent = PropertyViewIcons.COMPOSED()
-                typeRole = PropertyViewDataRoles.RELATIONSHIP_WITH_TARGETS
-            elif isinstance(primProperty, CustomAttribute):
-                typeContent = PropertyViewIcons.COMPOSED()
-                typeRole = PropertyViewDataRoles.COMPOSED
-            elif isinstance(primProperty, Usd.Relationship):
-                # Otherwise we have a relationship
-                targets = primProperty.GetTargets()
-                if targets:
-                    typeContent = PropertyViewIcons.RELATIONSHIP_WITH_TARGETS()
-                    typeRole = PropertyViewDataRoles.RELATIONSHIP_WITH_TARGETS
-                else:
-                    typeContent = PropertyViewIcons.RELATIONSHIP()
-                    typeRole = PropertyViewDataRoles.RELATIONSHIP
-            else:
-                PrintWarning("Property '%s' has unknown property type <%s>." %
-                    (key, type(primProperty)))
-                continue
-
-            valFunc, attrText = GetValueAndDisplayString(primProperty, frame)
-            item = QtWidgets.QTreeWidgetItem(["", str(key), attrText])
-            item.rawValue = valFunc()
-            treeWidget.addTopLevelItem(item)
-
-            treeWidget.topLevelItem(currRow).setIcon(PropertyViewIndex.TYPE, 
-                    typeContent)
-            treeWidget.topLevelItem(currRow).setData(PropertyViewIndex.TYPE,
-                    QtCore.Qt.ItemDataRole.WhatsThisRole,
-                    typeRole)
-            treeWidget.topLevelItem(currRow).setData(PropertyViewIndex.NAME,
-                PropertyViewDataRoles.NORMALIZED_NAME,
-                self._normalize_unicode(str(key)))
-
-            currItem = treeWidget.topLevelItem(currRow)
-
-            valTextFont = GetPropertyTextFont(primProperty, frame)
-            if valTextFont:
-                currItem.setFont(PropertyViewIndex.VALUE, valTextFont)
-                currItem.setFont(PropertyViewIndex.NAME, valTextFont)
-            else:
-                currItem.setFont(PropertyViewIndex.NAME, UIFonts.BOLD)
-
-            fgColor = GetPropertyColor(primProperty, frame)
-            # Inherited properties are colored 15% darker, along with the 
-            # addition of "(i)" in the type column.
-            if isInheritedProperty:
-                # Add "(i)" to the type column to indicate an inherited 
-                # property.
-                treeWidget.topLevelItem(currRow).setText(PropertyViewIndex.TYPE, 
-                                                         "(i)")
-                fgColor = fgColor.darker(115)
-                currItem.setFont(PropertyViewIndex.TYPE, UIFonts.INHERITED)
-
-            currItem.setForeground(PropertyViewIndex.NAME, fgColor)
-            currItem.setForeground(PropertyViewIndex.VALUE, fgColor)
-
-            if targets:
-                childRow = 0
-                for t in targets:
-                    valTextFont = GetPropertyTextFont(primProperty, frame) or \
-                            UIFonts.BOLD
-                    # USD does not provide or infer values for relationship or
-                    # connection targets, so we don't display them here.
-                    currItem.addChild(
-                            QtWidgets.QTreeWidgetItem(["", str(t), ""]))
-                    currItem.setFont(PropertyViewIndex.VALUE, valTextFont)
-                    child = currItem.child(childRow)
-
-                    child.setData(PropertyViewIndex.NAME,
-                        PropertyViewDataRoles.NORMALIZED_NAME,
-                        self._normalize_unicode(str(t)))
-
-                    if typeRole == PropertyViewDataRoles.RELATIONSHIP_WITH_TARGETS:
-                        child.setIcon(PropertyViewIndex.TYPE, 
-                                      PropertyViewIcons.TARGET())
-                        child.setData(PropertyViewIndex.TYPE,
-                                      QtCore.Qt.ItemDataRole.WhatsThisRole,
-                                      PropertyViewDataRoles.TARGET)
-                    else:
-                        child.setIcon(PropertyViewIndex.TYPE,
-                                      PropertyViewIcons.CONNECTION())
-                        child.setData(PropertyViewIndex.TYPE,
-                                      QtCore.Qt.ItemDataRole.WhatsThisRole,
-                                      PropertyViewDataRoles.CONNECTION)
-                    childRow += 1
-
-            currRow += 1
-
-        self._updateAgentMessageSelection()
-
-        # For some reason, resetting the scrollbar position here only works on a
-        # frame change, not when the prim changes. When the prim changes, the
-        # scrollbar always stays at the top of the list and setValue() has no
-        # effect.
-        treeWidget.verticalScrollBar().setValue(scrollPosition)
 
     def _updateAgentMessage(self):
         """ Sets the contents of the agent message viewer """
@@ -4091,9 +3918,55 @@ class AppController(QtCore.QObject):
                 QtWidgets.QApplication.restoreOverrideCursor()
 
     def _getSelectedObject(self):
+        # Agent Message is now a QTextEdit, simplified object selection
         focusPrim = self._dataModel.selection.getFocusPrim()
+        return focusPrim
 
-        attrs = self._ui.agentMessage.selectedItems()
+    def _findIndentPos(self, s):
+        for index, char in enumerate(s):
+            if char != ' ':
+                return index
+
+        return len(s) - 1
+
+    def _maxToolTipWidth(self):
+        """ Get the maximum width to use for tool tips. This is less
+        than the current window width.
+        """
+
+        return self._ui.frameStageTree.width() - 30
+
+    def _computeDisplayColor(self, color):
+        """ This is for computing the "display color" as it appears when
+        rendered.  It is primarily a workaround for color authoring in Maya
+        which encodes gamma-corrected values so we must compensate for them
+        here.  This is relevant for UsdGeom.Gprim.GetDisplayColorAttr().
+        """
+        if self._dataModel.viewSettings.gammaEnabled and \
+            self._dataModel.viewSettings.gammaValue != 1.0:
+            # adjust by inverse of gamma
+            gamma = 1.0 / self._dataModel.viewSettings.gammaValue
+            color = Gf.Pow(color, gamma)
+        return color
+
+    def _updateAgentMessage(self):
+        """ Sets the contents of the agent message viewer """
+        cursorOverride = not self._qtimer.isActive()
+        if cursorOverride:
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
+        try:
+            self._updateAgentMessageInternal()
+        except Exception as err:
+            print("Problem encountered updating attribute view: %s" % err)
+            raise
+        finally:
+            if cursorOverride:
+                QtWidgets.QApplication.restoreOverrideCursor()
+
+    def _getSelectedObject(self):
+        # Agent Message is now a QTextEdit, simplified object selection
+        focusPrim = self._dataModel.selection.getFocusPrim()
+        return focusPrim
         if len(attrs) == 0:
             return focusPrim
 
