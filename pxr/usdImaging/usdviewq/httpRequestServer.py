@@ -426,7 +426,7 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             if self.app_controller:
                 try:
                     # Trigger a refresh of the viewer
-                    self.app_controller._refreshGUI()
+                    self.app_controller.updateGUI()
                 except Exception as e:
                     print(f"Warning: Could not refresh GUI: {e}")
             
