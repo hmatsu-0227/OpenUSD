@@ -49,7 +49,8 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             "status": "ok",
             "message": "USDViewer HTTP Request Server is running",
             "available_endpoints": [
-                "POST /move - Move a prim by updating its transform"
+                "POST /move - Move a prim by updating its transform",
+                "POST /prompt - Process a prompt message"
             ]
         }
         self.wfile.write(json.dumps(response, indent=2).encode())
@@ -61,7 +62,7 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             endpoint = parsed_path.path.lower()
             
             # Check if endpoint exists first, before parsing body
-            if endpoint not in ['/move']:
+            if endpoint not in ['/move', '/prompt']:
                 self._send_error(404, f"Unknown endpoint: {endpoint}")
                 return
             
@@ -78,6 +79,8 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             
             if endpoint == '/move':
                 self._handle_move_request(request_data)
+            elif endpoint == '/prompt':
+                self._handle_prompt_request(request_data)
                 
         except Exception as e:
             self._send_error(500, f"Internal server error: {str(e)}")
@@ -164,6 +167,40 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             self._send_error(400, f"Invalid numeric parameter: {str(e)}")
         except Exception as e:
             self._send_error(500, f"Error processing move request: {str(e)}")
+            traceback.print_exc()
+    
+    def _handle_prompt_request(self, request_data):
+        """
+        Handle a prompt request.
+        
+        Expected request format:
+        {
+            "message": "Your prompt message here"    # Required
+        }
+        
+        Response format:
+        {
+            "status": "success",
+            "message": "Your prompt message here",
+            "response": "Your prompt message here"
+        }
+        """
+        try:
+            # Validate required parameters
+            if 'message' not in request_data:
+                self._send_error(400, "Missing required parameter: message")
+                return
+            
+            message = request_data['message']
+            
+            # For now, simply echo back the message
+            self._send_success({
+                "message": f"Received prompt message: {message}",
+                "response": message
+            })
+                
+        except Exception as e:
+            self._send_error(500, f"Error processing prompt request: {str(e)}")
             traceback.print_exc()
     
     def _get_current_transform(self, prim_path):
@@ -513,6 +550,7 @@ class USDViewerHTTPServer:
             print(f"Available endpoints:")
             print(f"  GET  / - Server status")
             print(f"  POST /move - Move a prim")
+            print(f"  POST /prompt - Process a prompt message")
             
         except Exception as e:
             print(f"Failed to start HTTP server: {e}")
