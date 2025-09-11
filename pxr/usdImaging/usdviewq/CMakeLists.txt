@@ -65,6 +65,7 @@ pxr_library(usdviewq
         freeCamera.py
         debugFlagsWidget.py
         configController.py
+        httpRequestServer.py
         usdviewstyle.qss
 
     PYSIDE_UI_FILES
@@ -97,11 +98,17 @@ pxr_test_scripts(
     testenv/testUsdviewqSelectionDataModel.py
     testenv/testUsdviewqLauncher.py
     testenv/testUsdviewqViewSettingsDataModel.py
+    testenv/testHttpServer.py
 )
 
 pxr_install_test_dir(
     SRC testenv/testUsdviewqRootDataModel
     DEST testUsdviewqRootDataModel
+)
+
+pxr_install_test_dir(
+    SRC testenv/testHttpServer.usda
+    DEST testHttpServer
 )
 
 pxr_register_test(testUsdviewqSettings
@@ -133,4 +140,8 @@ pxr_register_test(testUsdviewqViewSettingsDataModel
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdviewqViewSettingsDataModel"
     EXPECTED_RETURN_CODE 0
 )
+
+# Note: testHttpServer requires USDViewer to be running manually
+# and is therefore not included in automated test suite
+# To run manually: python testHttpServer.py
 

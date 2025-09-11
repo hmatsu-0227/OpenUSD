@@ -34,6 +34,7 @@ from .primContextMenu import PrimContextMenu
 from .headerContextMenu import HeaderContextMenu
 from .layerStackContextMenu import LayerStackContextMenu
 from .attributeViewContextMenu import AttributeViewContextMenu
+from .httpRequestServer import start_http_server, stop_http_server, update_stage, update_app_controller
 from .customAttributes import (_GetCustomAttributes, CustomAttribute,
                                BoundingBoxAttribute, LocalToWorldXformAttribute,
                                ResolvedBoundMaterial)
@@ -465,6 +466,15 @@ class AppController(QtCore.QObject):
 
 
             self._dataModel.stage = stage
+
+            # Initialize HTTP Request Server for external control
+            try:
+                port = int(os.getenv('USDVIEW_HTTP_PORT', '8080'))
+                host = os.getenv('USDVIEW_HTTP_HOST', 'localhost')
+                start_http_server(port=port, host=host, stage=stage, app_controller=self)
+                print(f"USDViewer HTTP Request Server started on http://{host}:{port}")
+            except Exception as e:
+                print(f"Warning: Could not start HTTP Request Server: {e}")
 
             self._primViewSelectionBlocker = Blocker()
             self._propertyViewSelectionBlocker = Blocker()
@@ -2786,6 +2796,12 @@ class AppController(QtCore.QObject):
         self._autoReloadTimer.stop()
         QtWidgets.QApplication.instance().removeEventFilter(self._filterObj)
         
+        # Stop HTTP Request Server
+        try:
+            stop_http_server()
+        except Exception as e:
+            print(f"Warning: Error stopping HTTP Request Server: {e}")
+        
         # If the timer is currently active, stop it from being invoked while
         # the USD stage is being torn down.
         if self._qtimer.isActive():
@@ -2976,6 +2992,12 @@ class AppController(QtCore.QObject):
             stage.Reload()
 
             self._dataModel.stage = stage
+
+            # Update HTTP Request Server with new stage
+            try:
+                update_stage(stage)
+            except Exception as e:
+                print(f"Warning: Could not update HTTP Request Server stage: {e}")
 
             self._resetSettings()
             self._resetView()
