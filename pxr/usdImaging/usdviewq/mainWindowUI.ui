@@ -615,11 +615,11 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QSplitter" name="attribBrowserInspectorSplitter">
+      <widget class="QSplitter" name="agentMessageUserPromptSplitter">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QFrame" name="attributeBrowserFrame">
+       <widget class="QFrame" name="agentMessageFrame">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -643,7 +643,7 @@
           <number>5</number>
          </property>
          <item>
-          <widget class="QTreeWidget" name="propertyView">
+          <widget class="QTreeWidget" name="agentMessage">
            <property name="toolTip">
             <string/>
            </property>
@@ -802,7 +802,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QFrame" name="propertyInspectorFrame">
+       <widget class="QFrame" name="userPromptFrame">
         <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
@@ -829,7 +829,7 @@
           <number>2</number>
          </property>
          <item>
-          <widget class="QFrame" name="propertyInspectorContainer">
+          <widget class="QFrame" name="userPromptContainer">
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
            </property>
@@ -850,7 +850,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTabWidget" name="propertyInspector">
+             <widget class="QTabWidget" name="userPrompt">
               <property name="currentIndex">
                <number>0</number>
               </property>

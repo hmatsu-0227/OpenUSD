@@ -33,7 +33,7 @@ from .mainWindowUI import Ui_MainWindow
 from .primContextMenu import PrimContextMenu
 from .headerContextMenu import HeaderContextMenu
 from .layerStackContextMenu import LayerStackContextMenu
-from .attributeViewContextMenu import AttributeViewContextMenu
+from .agentMessageContextMenu import AgentMessageContextMenu
 from .customAttributes import (_GetCustomAttributes, CustomAttribute,
                                BoundingBoxAttribute, LocalToWorldXformAttribute,
                                ResolvedBoundMaterial)
@@ -89,8 +89,8 @@ class PropertyIndex(ConstantsGroup):
 class UIDefaults(ConstantsGroup):
     STAGE_VIEW_WIDTH = 604
     PRIM_VIEW_WIDTH = 521
-    ATTRIBUTE_VIEW_WIDTH = 682
-    ATTRIBUTE_INSPECTOR_WIDTH = 443
+    AGENT_MESSAGE_WIDTH = 682
+    USER_PROMPT_WIDTH = 443
     TOP_HEIGHT = 538
     BOTTOM_HEIGHT = 306
 
@@ -140,17 +140,17 @@ class UIStateProxySource(StateSource):
         primViewColumnVisibility = self.stateProperty("primViewColumnVisibility",
                 default=[True, True, True, True, False], validator=lambda value: 
                 len(value) == 5)
-        propertyViewColumnVisibility = self.stateProperty("propertyViewColumnVisibility",
+        agentMessageColumnVisibility = self.stateProperty("agentMessageColumnVisibility",
                 default=[True, True, True], validator=lambda value: len(value) == 3)
-        attributeInspectorCurrentTab = self.stateProperty("attributeInspectorCurrentTab", default=PropertyIndex.VALUE)
+        attributeInspectorCurrentTab = self.stateProperty("userPromptCurrentTab", default=PropertyIndex.VALUE)
 
         # UI is different when --norender is used so just save the default splitter sizes.
         # TODO Save the loaded state so it doesn't disappear after using --norender.
         if not self._mainWindow._noRender:
             stageViewWidth = self.stateProperty("stageViewWidth", default=UIDefaults.STAGE_VIEW_WIDTH)
             primViewWidth = self.stateProperty("primViewWidth", default=UIDefaults.PRIM_VIEW_WIDTH)
-            attributeViewWidth = self.stateProperty("attributeViewWidth", default=UIDefaults.ATTRIBUTE_VIEW_WIDTH)
-            attributeInspectorWidth = self.stateProperty("attributeInspectorWidth", default=UIDefaults.ATTRIBUTE_INSPECTOR_WIDTH)
+            agentMessageWidth = self.stateProperty("agentMessageWidth", default=UIDefaults.AGENT_MESSAGE_WIDTH)
+            userPromptWidth = self.stateProperty("userPromptWidth", default=UIDefaults.USER_PROMPT_WIDTH)
             topHeight = self.stateProperty("topHeight", default=UIDefaults.TOP_HEIGHT)
             bottomHeight = self.stateProperty("bottomHeight", default=UIDefaults.BOTTOM_HEIGHT)
             viewerMode = self.stateProperty("viewerMode", default=False)
@@ -163,32 +163,32 @@ class UIStateProxySource(StateSource):
                     [primViewWidth, stageViewWidth])
                 self._mainWindow._ui.topBottomSplitter.setSizes(
                     [topHeight, bottomHeight])
-            self._mainWindow._ui.attribBrowserInspectorSplitter.setSizes(
-                [attributeViewWidth, attributeInspectorWidth])
+            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes(
+                [agentMessageWidth, userPromptWidth])
             self._mainWindow._viewerModeEscapeSizes = topHeight, bottomHeight, primViewWidth, stageViewWidth
         else:
             self._mainWindow._ui.primStageSplitter.setSizes(
                 [UIDefaults.PRIM_VIEW_WIDTH, UIDefaults.STAGE_VIEW_WIDTH])
-            self._mainWindow._ui.attribBrowserInspectorSplitter.setSizes(
-                [UIDefaults.ATTRIBUTE_VIEW_WIDTH, UIDefaults.ATTRIBUTE_INSPECTOR_WIDTH])
+            self._mainWindow._ui.agentMessageUserPromptSplitter.setSizes(
+                [UIDefaults.AGENT_MESSAGE_WIDTH, UIDefaults.USER_PROMPT_WIDTH])
             self._mainWindow._ui.topBottomSplitter.setSizes(
                 [UIDefaults.TOP_HEIGHT, UIDefaults.BOTTOM_HEIGHT])
 
         for i, visible in enumerate(primViewColumnVisibility):
             self._mainWindow._ui.primView.setColumnHidden(i, not visible)
-        for i, visible in enumerate(propertyViewColumnVisibility):
-            self._mainWindow._ui.propertyView.setColumnHidden(i, not visible)
+        for i, visible in enumerate(agentMessageColumnVisibility):
+            self._mainWindow._ui.agentMessage.setColumnHidden(i, not visible)
 
         propertyIndex = attributeInspectorCurrentTab
         if propertyIndex not in PropertyIndex:
             propertyIndex = PropertyIndex.VALUE
-        self._mainWindow._ui.propertyInspector.setCurrentIndex(propertyIndex)
+        self._mainWindow._ui.userPrompt.setCurrentIndex(propertyIndex)
 
     def onSaveState(self, state):
         # UI is different when --norender is used so don't load the splitter sizes.
         if not self._mainWindow._noRender:
             primViewWidth, stageViewWidth = self._mainWindow._ui.primStageSplitter.sizes()
-            attributeViewWidth, attributeInspectorWidth = self._mainWindow._ui.attribBrowserInspectorSplitter.sizes()
+            agentMessageWidth, userPromptWidth = self._mainWindow._ui.agentMessageUserPromptSplitter.sizes()
             topHeight, bottomHeight = self._mainWindow._ui.topBottomSplitter.sizes()
             viewerMode = (bottomHeight == 0 and primViewWidth == 0)
 
@@ -200,15 +200,15 @@ class UIStateProxySource(StateSource):
                 else:
                     primViewWidth = UIDefaults.STAGE_VIEW_WIDTH
                     stageViewWidth = UIDefaults.PRIM_VIEW_WIDTH
-                    attributeViewWidth = UIDefaults.ATTRIBUTE_VIEW_WIDTH
-                    attributeInspectorWidth = UIDefaults.ATTRIBUTE_INSPECTOR_WIDTH
+                    agentMessageWidth = UIDefaults.AGENT_MESSAGE_WIDTH
+                    userPromptWidth = UIDefaults.USER_PROMPT_WIDTH
                     topHeight = UIDefaults.TOP_HEIGHT
                     bottomHeight = UIDefaults.BOTTOM_HEIGHT
 
             state["primViewWidth"] = primViewWidth
             state["stageViewWidth"] = stageViewWidth
-            state["attributeViewWidth"] = attributeViewWidth
-            state["attributeInspectorWidth"] = attributeInspectorWidth
+            state["agentMessageWidth"] = agentMessageWidth
+            state["userPromptWidth"] = userPromptWidth
             state["topHeight"] = topHeight
             state["bottomHeight"] = bottomHeight
             state["viewerMode"] = viewerMode
@@ -216,11 +216,11 @@ class UIStateProxySource(StateSource):
         state["primViewColumnVisibility"] = [
             not self._mainWindow._ui.primView.isColumnHidden(c)
             for c in range(self._mainWindow._ui.primView.columnCount())]
-        state["propertyViewColumnVisibility"] = [
-            not self._mainWindow._ui.propertyView.isColumnHidden(c)
-            for c in range(self._mainWindow._ui.propertyView.columnCount())]
+        state["agentMessageColumnVisibility"] = [
+            not self._mainWindow._ui.agentMessage.isColumnHidden(c)
+            for c in range(self._mainWindow._ui.agentMessage.columnCount())]
 
-        state["attributeInspectorCurrentTab"] = self._mainWindow._ui.propertyInspector.currentIndex()
+        state["userPromptCurrentTab"] = self._mainWindow._ui.userPrompt.currentIndex()
 
 
 class Blocker:
@@ -467,7 +467,7 @@ class AppController(QtCore.QObject):
             self._dataModel.stage = stage
 
             self._primViewSelectionBlocker = Blocker()
-            self._propertyViewSelectionBlocker = Blocker()
+            self._agentMessageSelectionBlocker = Blocker()
 
             self._dataModel.selection.signalPrimSelectionChanged.connect(
                 self._primSelectionChanged)
@@ -570,19 +570,19 @@ class AppController(QtCore.QObject):
             stepValidator.setRange(0.01, 1e7, 2)
             self._ui.stepSize.setValidator(stepValidator)
 
-            # This causes the last column of the attribute view (the value)
+            # This causes the last column of the agent message view (the value)
             # to be stretched to fill the available space
-            self._ui.propertyView.header().setStretchLastSection(True)
+            self._ui.agentMessage.header().setStretchLastSection(True)
 
-            self._ui.propertyView.setSelectionBehavior(
+            self._ui.agentMessage.setSelectionBehavior(
                 QtWidgets.QAbstractItemView.SelectRows)
             self._ui.primView.setSelectionBehavior(
                 QtWidgets.QAbstractItemView.SelectRows)
             # This allows ctrl and shift clicking for multi-selecting
-            self._ui.propertyView.setSelectionMode(
+            self._ui.agentMessage.setSelectionMode(
                 QtWidgets.QAbstractItemView.ExtendedSelection)
 
-            self._ui.propertyView.setHorizontalScrollMode(
+            self._ui.agentMessage.setHorizontalScrollMode(
                 QtWidgets.QAbstractItemView.ScrollPerPixel)
 
             self._ui.frameSlider.setTracking(
@@ -683,22 +683,22 @@ class AppController(QtCore.QObject):
                 action = getattr(self._ui, "actionLevel_" + str(i))
                 self._ui.primViewDepthGroup.addAction(action)
 
-            # setup animation objects for the primView and propertyView
+            # setup animation objects for the primView and agentMessage
             self._propertyLegendAnim = QtCore.QPropertyAnimation(
                 self._ui.propertyLegendContainer, b"maximumHeight")
             self._primLegendAnim = QtCore.QPropertyAnimation(
                 self._ui.primLegendContainer, b"maximumHeight")
 
-            # set the context menu policy for the prim browser and attribute
-            # inspector headers. This is so we can have a context menu on the
+            # set the context menu policy for the prim browser and agent message
+            # headers. This is so we can have a context menu on the
             # headers that allows you to select which columns are visible.
-            self._ui.propertyView.header()\
+            self._ui.agentMessage.header()\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self._ui.primView.header()\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
-            # Set custom context menu for attribute browser
-            self._ui.propertyView\
+            # Set custom context menu for agent message browser
+            self._ui.agentMessage\
                     .setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 
             # Set custom context menu for layer stack browser
@@ -742,7 +742,7 @@ class AppController(QtCore.QObject):
             nvh.setSectionResizeMode(PrimViewColumnIndex.DRAWMODE,
                 QtWidgets.QHeaderView.Fixed)
 
-            pvh = self._ui.propertyView.header()
+            pvh = self._ui.agentMessage.header()
             pvh.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
             pvh.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
             pvh.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
@@ -753,7 +753,7 @@ class AppController(QtCore.QObject):
             # QTableWidget widgets in use.
             self._ui.primView.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
-            self._ui.propertyView.setHorizontalScrollBarPolicy(
+            self._ui.agentMessage.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
             self._ui.metadataView.setHorizontalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOn)
@@ -906,20 +906,20 @@ class AppController(QtCore.QObject):
             self._ui.actionCull_Backfaces.triggered.connect(
                 self._toggleCullBackfaces)
 
-            self._ui.propertyInspector.currentChanged.connect(
-                self._updatePropertyInspector)
+            self._ui.userPrompt.currentChanged.connect(
+                self._updateUserPrompt)
 
-            self._ui.propertyView.itemSelectionChanged.connect(
-                self._propertyViewSelectionChanged)
+            self._ui.agentMessage.itemSelectionChanged.connect(
+                self._agentMessageSelectionChanged)
 
-            self._ui.propertyView.currentItemChanged.connect(
-                self._propertyViewCurrentItemChanged)
+            self._ui.agentMessage.currentItemChanged.connect(
+                self._agentMessageCurrentItemChanged)
 
-            self._ui.propertyView.header().customContextMenuRequested.\
-                connect(self._propertyViewHeaderContextMenu)
+            self._ui.agentMessage.header().customContextMenuRequested.\
+                connect(self._agentMessageHeaderContextMenu)
 
-            self._ui.propertyView.customContextMenuRequested.connect(
-                self._propertyViewContextMenu)
+            self._ui.agentMessage.customContextMenuRequested.connect(
+                self._agentMessageContextMenu)
 
             self._ui.layerStackView.customContextMenuRequested.connect(
                 self._layerStackContextMenu)
@@ -1833,8 +1833,8 @@ class AppController(QtCore.QObject):
                 self._ui.renderFrame.hide()
                 self._ui.renderFrame.setParent(None)
 
-                # move the attributeBrowser into the primSplitter instead
-                self._ui.primStageSplitter.addWidget(self._ui.attributeBrowserFrame)
+                # move the agentMessage into the primSplitter instead
+                self._ui.primStageSplitter.addWidget(self._ui.agentMessageFrame)
 
             else:
                 self._stageView = StageView(
@@ -1947,8 +1947,8 @@ class AppController(QtCore.QObject):
             else:
                 self._resetPrimViewVis(selItemsOnly=False)
 
-            self._updatePropertyView()
-            self._populatePropertyInspector()
+            self._updateAgentMessage()
+            self._populateUserPrompt()
             self._updateMetadataView()
             self._updateLayerStackView()
             self._updateCompositionView()
@@ -2384,8 +2384,8 @@ class AppController(QtCore.QObject):
 
             # Go to the next result of the currently ongoing search
             index = self._attrSearchResults.popleft()
-            nextResult = self._ui.propertyView.model().data(index)
-            item = self._ui.propertyView.itemFromIndex(index)
+            nextResult = self._ui.agentMessage.model().data(index)
+            item = self._ui.agentMessage.itemFromIndex(index)
             itemName = nextResult
 
             selectedProp = self._propertiesDict[itemName]
@@ -2395,7 +2395,7 @@ class AppController(QtCore.QObject):
             else:
                 self._dataModel.selection.setProp(selectedProp)
                 self._dataModel.selection.clearComputedProps()
-            self._ui.propertyView.scrollToItem(item)
+            self._ui.agentMessage.scrollToItem(item)
 
             self._attrSearchResults.append(index)
             self._lastPrimSearched = self._dataModel.selection.getFocusPrim()
@@ -2408,9 +2408,9 @@ class AppController(QtCore.QObject):
             # Begin a new search
             self._attrSearchString = self._normalize_unicode(self._ui.attrViewLineEdit.text())
             
-            search1 = deque(self._ui.propertyView.model().match(self._ui.propertyView.model().index(0, 1),
+            search1 = deque(self._ui.agentMessage.model().match(self._ui.agentMessage.model().index(0, 1),
                 PropertyViewDataRoles.NORMALIZED_NAME, self._attrSearchString, -1, QtCore.Qt.MatchContains))
-            search2 = deque(self._ui.propertyView.model().match(self._ui.propertyView.model().index(0, 1),
+            search2 = deque(self._ui.agentMessage.model().match(self._ui.agentMessage.model().index(0, 1),
                 PropertyViewDataRoles.NORMALIZED_NAME, self._attrSearchString, -1, QtCore.Qt.MatchRegExp))
 
             combinedItems = set(search1 + search2)
@@ -2615,7 +2615,7 @@ class AppController(QtCore.QObject):
     def _setUseExtentsHint(self):
         self._dataModel.useExtentsHint = self._ui.useExtentsHint.isChecked()
 
-        self._updatePropertyView()
+        self._updateAgentMessage()
 
         #recompute and display bbox
         self._refreshBBox()
@@ -3149,7 +3149,7 @@ class AppController(QtCore.QObject):
         """
 
         selectedProperties = dict()
-        for item in self._ui.propertyView.selectedItems():
+        for item in self._ui.agentMessage.selectedItems():
             # We define data 'roles' in the property viewer to distinguish between things
             # like attributes and attributes with connections, relationships and relationships
             # with targets etc etc.
@@ -3181,18 +3181,18 @@ class AppController(QtCore.QObject):
                 if isinstance(prop, CustomAttribute):
                     self._dataModel.selection.addComputedProp(prop)
 
-    def _propertyViewSelectionChanged(self):
+    def _agentMessageSelectionChanged(self):
         """Called whenever property view's selection changes."""
 
-        if self._propertyViewSelectionBlocker.blocked():
+        if self._agentMessageSelectionBlocker.blocked():
             return
 
         self._updatePropertiesFromPropertyView()
 
-    def _propertyViewCurrentItemChanged(self, currentItem, lastItem):
+    def _agentMessageCurrentItemChanged(self, currentItem, lastItem):
 
         """Called whenever property view's current item changes."""
-        if self._propertyViewSelectionBlocker.blocked():
+        if self._agentMessageSelectionBlocker.blocked():
             return
 
         # If a selected item becomes the current item, it will not fire a
@@ -3205,11 +3205,11 @@ class AppController(QtCore.QObject):
         """Called whenever the property selection in the data model changes.
         Updates any UI that relies on the selection state.
         """
-        self._updatePropertyViewSelection()
-        self._populatePropertyInspector()
-        self._updatePropertyInspector()
+        self._updateAgentMessageSelection()
+        self._populateUserPrompt()
+        self._updateUserPrompt()
 
-    def _populatePropertyInspector(self):
+    def _populateUserPrompt(self):
 
         focusPrimPath = None
         focusPropName = None
@@ -3232,11 +3232,11 @@ class AppController(QtCore.QObject):
         self._currentSpec = getattr(curr, 'spec', None)
         self._currentLayer = getattr(curr, 'layer', None)
 
-    def _updatePropertyInspector(self, index=None, obj=None):
+    def _updateUserPrompt(self, index=None, obj=None):
         # index must be the first parameter since this method is used as
-        # propertyInspector tab widget's currentChanged(int) signal callback
+        # userPrompt tab widget's currentChanged(int) signal callback
         if index is None:
-            index = self._ui.propertyInspector.currentIndex()
+            index = self._ui.userPrompt.currentIndex()
 
         if obj is None:
             obj = self._getSelectedObject()
@@ -3251,10 +3251,10 @@ class AppController(QtCore.QObject):
     def _refreshAttributeValue(self):
         self._ui.attributeValueEditor.refresh()
 
-    def _propertyViewContextMenu(self, point):
-        item = self._ui.propertyView.itemAt(point)
+    def _agentMessageContextMenu(self, point):
+        item = self._ui.agentMessage.itemAt(point)
         if item:
-            self.contextMenu = AttributeViewContextMenu(self._mainWindow, 
+            self.contextMenu = AgentMessageContextMenu(self._mainWindow, 
                                                         item, self._dataModel)
             self.contextMenu.exec_(QtGui.QCursor.pos())
 
@@ -3270,8 +3270,8 @@ class AppController(QtCore.QObject):
         self.contextMenu.exec_(QtGui.QCursor.pos())
 
     # Headers & Columns =================================================
-    def _propertyViewHeaderContextMenu(self, point):
-        self.contextMenu = HeaderContextMenu(self._ui.propertyView)
+    def _agentMessageHeaderContextMenu(self, point):
+        self.contextMenu = HeaderContextMenu(self._ui.agentMessage)
         self.contextMenu.exec_(QtGui.QCursor.pos())
 
     def _primViewHeaderContextMenu(self, point):
@@ -3605,9 +3605,9 @@ class AppController(QtCore.QObject):
             self._updateHUDPrimStats()
             self._updateHUDGeomCounts()
             self._stageView.updateView()
-        self._updatePropertyInspector(
+        self._updateUserPrompt(
             obj=self._dataModel.selection.getFocusPrim())
-        self._updatePropertyView()
+        self._updateAgentMessage()
         self._refreshAttributeValue()
 
     def _getPrimsFromPaths(self, paths):
@@ -3839,7 +3839,7 @@ class AppController(QtCore.QObject):
         # slow stuff that we do only when not playing
         # topology might have changed, recalculate
         self._updateHUDGeomCounts()
-        self._updatePropertyView()
+        self._updateAgentMessage()
         self._refreshAttributeValue()
 
         # value sources of an attribute can change upon frame change
@@ -3914,13 +3914,13 @@ class AppController(QtCore.QObject):
 
         return propertiesDict
 
-    def _propertyViewDeselectItem(self, item):
+    def _agentMessageDeselectItem(self, item):
         item.setSelected(False)
         for i in range(item.childCount()):
             item.child(i).setSelected(False)
 
-    def _updatePropertyViewSelection(self):
-        """Updates property view's selected items to match the data model."""
+    def _updateAgentMessageSelection(self):
+        """Updates agent message view's selected items to match the data model."""
 
         focusPrim = self._dataModel.selection.getFocusPrim()
         propTargets = self._dataModel.selection.getPropTargets()
@@ -3932,9 +3932,9 @@ class AppController(QtCore.QObject):
         selectedPrimPropNames.update({propName: set()
             for primPath, propName in computedProps})
 
-        rootItem = self._ui.propertyView.invisibleRootItem()
+        rootItem = self._ui.agentMessage.invisibleRootItem()
 
-        with self._propertyViewSelectionBlocker:
+        with self._agentMessageSelectionBlocker:
             for i in range(rootItem.childCount()):
                 item = rootItem.child(i)
                 propName = str(item.text(PropertyViewIndex.NAME))
@@ -3950,19 +3950,19 @@ class AppController(QtCore.QObject):
                         if targetPath in targets:
                             childItem.setSelected(True)
                 else:
-                    self._propertyViewDeselectItem(item)
+                    self._agentMessageDeselectItem(item)
 
-    def _updatePropertyViewInternal(self):
+    def _updateAgentMessageInternal(self):
         frame = self._dataModel.currentFrame
-        treeWidget = self._ui.propertyView
+        treeWidget = self._ui.agentMessage
         treeWidget.setTextElideMode(QtCore.Qt.ElideMiddle)
         scrollPosition = treeWidget.verticalScrollBar().value()
 
         # get a dictionary of prim attribs/members and store it in self._propertiesDict
         self._propertiesDict = self._getPropertiesDict()
-        with self._propertyViewSelectionBlocker:
+        with self._agentMessageSelectionBlocker:
             treeWidget.clear()
-        self._populatePropertyInspector()
+        self._populateUserPrompt()
 
         curPrimSelection = self._dataModel.selection.getFocusPrim()
 
@@ -4068,7 +4068,7 @@ class AppController(QtCore.QObject):
 
             currRow += 1
 
-        self._updatePropertyViewSelection()
+        self._updateAgentMessageSelection()
 
         # For some reason, resetting the scrollbar position here only works on a
         # frame change, not when the prim changes. When the prim changes, the
@@ -4076,13 +4076,13 @@ class AppController(QtCore.QObject):
         # effect.
         treeWidget.verticalScrollBar().setValue(scrollPosition)
 
-    def _updatePropertyView(self):
-        """ Sets the contents of the attribute value viewer """
+    def _updateAgentMessage(self):
+        """ Sets the contents of the agent message viewer """
         cursorOverride = not self._qtimer.isActive()
         if cursorOverride:
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
         try:
-            self._updatePropertyViewInternal()
+            self._updateAgentMessageInternal()
         except Exception as err:
             print("Problem encountered updating attribute view: %s" % err)
             raise
@@ -4093,7 +4093,7 @@ class AppController(QtCore.QObject):
     def _getSelectedObject(self):
         focusPrim = self._dataModel.selection.getFocusPrim()
 
-        attrs = self._ui.propertyView.selectedItems()
+        attrs = self._ui.agentMessage.selectedItems()
         if len(attrs) == 0:
             return focusPrim
 
@@ -5448,7 +5448,7 @@ class AppController(QtCore.QObject):
                 == self._dataModel.viewSettings.highlightColorName)
 
     def _displayPurposeChanged(self):
-        self._updatePropertyView()
+        self._updateAgentMessage()
         if self._stageView:
             self._stageView.updateBboxPurposes()
             self._stageView.updateView()

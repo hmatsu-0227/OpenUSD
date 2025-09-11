@@ -39,7 +39,7 @@ pxr_library(usdviewq
         primContextMenu.py
         primContextMenuItems.py
         headerContextMenu.py
-        attributeViewContextMenu.py
+        agentMessageContextMenu.py
         layerStackContextMenu.py
         prettyPrint.py
         pythonInterpreter.py
