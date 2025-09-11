@@ -1,0 +1,58 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    def Cube "TestCube"
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        double xformOp:rotateZ = 0
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateZ"]
+        
+        color3f[] primvars:displayColor = [(0.2, 0.5, 0.8)]
+    }
+    
+    def Sphere "TestSphere"
+    {
+        double3 xformOp:translate = (3, 0, 0)
+        float3 xformOp:rotateXYZ = (0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ", "xformOp:scale"]
+        
+        color3f[] primvars:displayColor = [(0.8, 0.2, 0.2)]
+    }
+    
+    def Cylinder "TestCylinder"
+    {
+        double3 xformOp:translate = (-3, 0, 0)
+        float xformOp:rotateX = 0
+        float xformOp:rotateY = 0
+        float xformOp:rotateZ = 0
+        float3 xformOp:scale = (1.5, 1.5, 1.5)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateX", "xformOp:rotateY", "xformOp:rotateZ", "xformOp:scale"]
+        
+        color3f[] primvars:displayColor = [(0.2, 0.8, 0.2)]
+    }
+    
+    def Mesh "TestMesh"
+    {
+        double3 xformOp:translate = (0, 3, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.2)]
+    }
+    
+    def Scope "TestScope"
+    {
+        matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (5, 5, 0, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+        
+        def Cube "ChildCube"
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.2, 0.8)]
+        }
+    }
+}

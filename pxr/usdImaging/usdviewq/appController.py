@@ -34,6 +34,7 @@ from .primContextMenu import PrimContextMenu
 from .headerContextMenu import HeaderContextMenu
 from .layerStackContextMenu import LayerStackContextMenu
 from .agentMessageContextMenu import AgentMessageContextMenu
+from .httpRequestServer import start_http_server, stop_http_server, update_stage, update_app_controller
 from .customAttributes import (_GetCustomAttributes, CustomAttribute,
                                BoundingBoxAttribute, LocalToWorldXformAttribute,
                                ResolvedBoundMaterial)
@@ -470,6 +471,15 @@ class AppController(QtCore.QObject):
 
             self._dataModel.stage = stage
 
+            # Initialize HTTP Request Server for external control
+            try:
+                port = int(os.getenv('USDVIEW_HTTP_PORT', '8080'))
+                host = os.getenv('USDVIEW_HTTP_HOST', 'localhost')
+                start_http_server(port=port, host=host, stage=stage, app_controller=self)
+                print(f"USDViewer HTTP Request Server started on http://{host}:{port}")
+            except Exception as e:
+                print(f"Warning: Could not start HTTP Request Server: {e}")
+
             self._primViewSelectionBlocker = Blocker()
             self._agentMessageSelectionBlocker = Blocker()
 
@@ -548,6 +558,20 @@ class AppController(QtCore.QObject):
             self._primViewResizeTimer.setInterval(0)
             self._primViewResizeTimer.setSingleShot(True)
             self._primViewResizeTimer.timeout.connect(self._resizePrimView)
+
+            # Auto-reload timer for monitoring USD file changes
+            self._autoReloadTimer = QtCore.QTimer(self)
+            self._autoReloadTimer.setInterval(3000)  # 3 seconds
+            self._autoReloadTimer.timeout.connect(self._autoReloadStage)
+            self._autoReloadTimer.start()
+            
+            # Track file modification time for change detection
+            self._lastFileModTime = None
+            if self._parserData.usdFile:
+                try:
+                    self._lastFileModTime = os.path.getmtime(self._parserData.usdFile)
+                except OSError:
+                    self._lastFileModTime = None
 
             # This timer coalesces GUI resets when the USD stage is modified or
             # reloaded.
@@ -2746,7 +2770,14 @@ class AppController(QtCore.QObject):
         # Shut down some timers and our eventFilter
         self._primViewUpdateTimer.stop()
         self._guiResetTimer.stop()
+        self._autoReloadTimer.stop()
         QtWidgets.QApplication.instance().removeEventFilter(self._filterObj)
+        
+        # Stop HTTP Request Server
+        try:
+            stop_http_server()
+        except Exception as e:
+            print(f"Warning: Error stopping HTTP Request Server: {e}")
         
         # If the timer is currently active, stop it from being invoked while
         # the USD stage is being torn down.
@@ -2939,6 +2970,12 @@ class AppController(QtCore.QObject):
 
             self._dataModel.stage = stage
 
+            # Update HTTP Request Server with new stage
+            try:
+                update_stage(stage)
+            except Exception as e:
+                print(f"Warning: Could not update HTTP Request Server stage: {e}")
+
             self._resetSettings()
             self._resetView()
 
@@ -2968,6 +3005,33 @@ class AppController(QtCore.QObject):
             QtWidgets.QApplication.restoreOverrideCursor()
 
         self.statusMessage('All Layers Reloaded.')
+
+    def _autoReloadStage(self):
+        """
+        Automatically reload the stage if the USD file has been modified.
+        This method is called every 3 seconds by the auto-reload timer.
+        """
+        if not self._parserData.usdFile:
+            return
+            
+        try:
+            currentModTime = os.path.getmtime(self._parserData.usdFile)
+            
+            # Check if file has been modified since last check
+            if self._lastFileModTime is None or currentModTime > self._lastFileModTime:
+                self._lastFileModTime = currentModTime
+                
+                # Only reload if we have a valid stage
+                if self._dataModel.stage:
+                    self.statusMessage('Auto-reloading stage due to file changes...')
+                    self._reloadStage()
+                    
+        except OSError:
+            # File might have been deleted or moved, ignore silently
+            pass
+        except Exception as err:
+            # Log any other errors but don't crash the application
+            print("Warning: Auto-reload failed: %s" % err)
 
     def _cameraSelectionChanged(self, camera):
         self._dataModel.viewSettings.cameraPrim = camera
