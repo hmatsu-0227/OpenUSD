@@ -25,6 +25,17 @@ import traceback
 
 from pxr import Usd, UsdGeom, Sdf, Gf, Tf
 
+try:
+    from PySide6 import QtCore
+except ImportError:
+    try:
+        from PySide2 import QtCore
+    except ImportError:
+        try:
+            from PyQt5 import QtCore
+        except ImportError:
+            QtCore = None
+
 
 class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
     """HTTP request handler for USDViewer operations."""
@@ -193,10 +204,45 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             
             message = request_data['message']
             
-            # For now, simply echo back the message
+            # Add prefix to the message
+            formatted_message = f"[Agent] {message}"
+            print(f"DEBUG: Formatted message: {formatted_message}")
+            
+            # Add the message to the history QTextEdit if app_controller is available
+            if self.app_controller and hasattr(self.app_controller, '_ui'):
+                try:
+                    # Use QMetaObject.invokeMethod for thread-safe execution
+                    if QtCore:
+                        # Get the history widget from app_controller
+                        history_widget = None
+                        if hasattr(self.app_controller._ui, 'history'):
+                            history_widget = self.app_controller._ui.history
+                        elif hasattr(self.app_controller, '_mainWindow') and hasattr(self.app_controller._mainWindow, '_ui'):
+                            if hasattr(self.app_controller._mainWindow._ui, 'history'):
+                                history_widget = self.app_controller._mainWindow._ui.history
+                        
+                        if history_widget:
+                            # Use QMetaObject.invokeMethod with Q_ARG for thread-safe call
+                            QtCore.QMetaObject.invokeMethod(
+                                history_widget,
+                                "append",
+                                QtCore.Qt.QueuedConnection,
+                                QtCore.Q_ARG("QString", formatted_message)
+                            )
+                    else:
+                        # Fallback if Qt is not available
+                        print(f"Qt not available, printing message: {formatted_message}")
+                        
+                except Exception as e:
+                    print(f"Warning: Could not update history: {e}")
+            else:
+                print(f"Warning: app_controller not available for history update")
+            
+            # Send success response
             self._send_success({
                 "message": f"Received prompt message: {message}",
-                "response": message
+                "response": formatted_message,
+                "added_to_history": True
             })
                 
         except Exception as e:

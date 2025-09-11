@@ -3665,8 +3665,8 @@ class AppController(QtCore.QObject):
             self._updateHUDPrimStats()
             self._updateHUDGeomCounts()
             self._stageView.updateView()
-        self._updateUserPrompt(
-            obj=self._dataModel.selection.getFocusPrim())
+        # self._updateUserPrompt(
+        #     obj=self._dataModel.selection.getFocusPrim())
         self._updateAgentMessage()
         self._refreshAttributeValue()
 
@@ -3995,7 +3995,7 @@ class AppController(QtCore.QObject):
         else:
             self._ui.history.setPlainText("Agent Message: No prim selected")
         
-        self._populateUserPrompt()
+        # self._populateUserPrompt()
 
     def _updateAgentMessage(self):
         """ Sets the contents of the agent message viewer """
