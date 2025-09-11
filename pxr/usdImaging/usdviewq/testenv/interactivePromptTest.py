@@ -30,7 +30,7 @@ def send_prompt_message(server_url, message):
             prompt_url,
             json=payload,
             headers={'Content-Type': 'application/json'},
-            timeout=10
+            timeout=None  # Wait indefinitely for user response
         )
         
         print(f"Status Code: {response.status_code}")
@@ -109,6 +109,7 @@ def main():
             
             # Send the message and get the response
             print(f"\n📤 Sending: '{message}'")
+            print("⏳ Waiting for response... (Go to USDViewer and enter text in userPromptInput, then press Enter)")
             print("-" * 30)
             response = send_prompt_message(server_url, message)
             

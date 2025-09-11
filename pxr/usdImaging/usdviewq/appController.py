@@ -848,6 +848,13 @@ class AppController(QtCore.QObject):
 
             self._ui.rangeEnd.editingFinished.connect(self._rangeEndChanged)
 
+            # Setup userPromptInput event handler for Enter key
+            self._ui.userPromptInput.installEventFilter(self)
+            
+            # Add instance variables for HTTP prompt handling
+            self._promptPendingEvent = None
+            self._promptResponse = None
+
             self._ui.actionReset_View.triggered.connect(lambda: self._resetView())
 
             self._ui.topBottomSplitter.splitterMoved.connect(self._cacheViewerModeEscapeSizes)
@@ -3987,15 +3994,7 @@ class AppController(QtCore.QObject):
 
     def _updateAgentMessageInternal(self):
         # Agent Message is now a QTextEdit, simply display basic information
-        focusPrim = self._dataModel.selection.getFocusPrim()
-        if focusPrim:
-            message = f"Agent Message: Selected prim - {focusPrim.GetPath()}\n"
-            message += f"Prim type: {focusPrim.GetTypeName()}\n"
-            self._ui.history.setPlainText(message)
-        else:
-            self._ui.history.setPlainText("Agent Message: No prim selected")
-        
-        # self._populateUserPrompt()
+        self._ui.history.setPlainText("Waiting for agent to be connected...")
 
     def _updateAgentMessage(self):
         """ Sets the contents of the agent message viewer """
@@ -5440,3 +5439,35 @@ class AppController(QtCore.QObject):
             return
         if self._stageView.PollForAsynchronousUpdates():
             self._usdviewApi.UpdateViewport()
+
+    def eventFilter(self, obj, event):
+        """Handle events for userPromptInput, specifically Enter key presses."""
+        if obj == self._ui.userPromptInput and event.type() == QtCore.QEvent.KeyPress:
+            if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+                # Get the text from userPromptInput
+                user_input = self._ui.userPromptInput.toPlainText().strip()
+                
+                # Add user input to history with [User] prefix if there's text
+                if user_input:
+                    formatted_user_message = f"[User] {user_input}"
+                    if hasattr(self._ui, 'history'):
+                        self._ui.history.append(formatted_user_message)
+                
+                # Store the response and signal the HTTP server
+                if self._promptPendingEvent:
+                    self._promptResponse = user_input
+                    self._promptPendingEvent.set()
+                
+                # Clear the userPromptInput
+                self._ui.userPromptInput.clear()
+                
+                return True  # Event handled
+        return super().eventFilter(obj, event)
+
+    def setPromptPendingEvent(self, event):
+        """Set the event object that the HTTP server is waiting on."""
+        self._promptPendingEvent = event
+
+    def getPromptResponse(self):
+        """Get the user's response from userPromptInput."""
+        return getattr(self, '_promptResponse', None)

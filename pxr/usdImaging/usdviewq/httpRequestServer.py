@@ -182,7 +182,7 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
     
     def _handle_prompt_request(self, request_data):
         """
-        Handle a prompt request.
+        Handle a prompt request and wait for user input.
         
         Expected request format:
         {
@@ -193,7 +193,7 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
         {
             "status": "success",
             "message": "Your prompt message here",
-            "response": "Your prompt message here"
+            "user_response": "User's input from userPromptInput"
         }
         """
         try:
@@ -206,7 +206,6 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             
             # Add prefix to the message
             formatted_message = f"[Agent] {message}"
-            print(f"DEBUG: Formatted message: {formatted_message}")
             
             # Add the message to the history QTextEdit if app_controller is available
             if self.app_controller and hasattr(self.app_controller, '_ui'):
@@ -222,13 +221,19 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
                                 history_widget = self.app_controller._mainWindow._ui.history
                         
                         if history_widget:
-                            # Use QMetaObject.invokeMethod with Q_ARG for thread-safe call
-                            QtCore.QMetaObject.invokeMethod(
-                                history_widget,
-                                "append",
-                                QtCore.Qt.QueuedConnection,
-                                QtCore.Q_ARG("QString", formatted_message)
-                            )
+                            # Schedule the GUI update to happen in the main thread
+                            def append_message():
+                                try:
+                                    history_widget.append(formatted_message)
+                                except Exception as e:
+                                    print(f"Error appending to history: {e}")
+                            
+                            # Execute in main thread using QApplication.postEvent or direct call
+                            try:
+                                # Simple direct call - Qt should handle thread safety for basic operations
+                                history_widget.append(formatted_message)
+                            except Exception as e:
+                                print(f"Warning: Could not append to history: {e}")
                     else:
                         # Fallback if Qt is not available
                         print(f"Qt not available, printing message: {formatted_message}")
@@ -238,12 +243,36 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 print(f"Warning: app_controller not available for history update")
             
-            # Send success response
-            self._send_success({
-                "message": f"Received prompt message: {message}",
-                "response": formatted_message,
-                "added_to_history": True
-            })
+            # Wait for user to press Enter in userPromptInput
+            if self.app_controller:
+                # Create an event to wait for user input
+                user_input_event = threading.Event()
+                
+                # Set the event in app_controller so it knows to signal when Enter is pressed
+                try:
+                    # Direct call - should be safe for setting simple instance variables
+                    self.app_controller.setPromptPendingEvent(user_input_event)
+                except Exception as e:
+                    print(f"Warning: Could not set prompt event: {e}")
+                    return self._json_response({"error": "Could not set up prompt handling"}, 500)
+                
+                # Wait for the user to press Enter (with a timeout to prevent hanging)
+                if user_input_event.wait(timeout=300):  # 5 minute timeout
+                    # Get the user's response
+                    user_response = self.app_controller.getPromptResponse()
+                    
+                    # Send success response with user input
+                    self._send_success({
+                        "message": f"Received prompt message: {message}",
+                        "response": user_response or "",
+                        "user_response": user_response or "",  # Keep for backward compatibility
+                        "status": "completed"
+                    })
+                else:
+                    # Timeout occurred
+                    self._send_error(408, "Request timeout: User did not respond within 5 minutes")
+            else:
+                self._send_error(500, "App controller not available for user input")
                 
         except Exception as e:
             self._send_error(500, f"Error processing prompt request: {str(e)}")
