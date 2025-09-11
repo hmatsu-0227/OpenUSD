@@ -16,22 +16,22 @@ import sys
 # ========================================================================
 
 # Mandatory parameter
-SDF_PATH = "/World/TestCube"  # Required - do not comment out
+SDF_PATH = "/Kitchen_set/Props_grp/DiningTable_grp/KitchenTable_1"  # Required - do not comment out
 
 # Translation parameters
-X = 5.0
-Y = 3.0
-Z = 2.0
+X = 200.0
+#Y = 3.0
+#Z = 2.0
 
 # Rotation parameters (degrees)
-ROTATE_X = 45.0
-ROTATE_Y = 30.0
-ROTATE_Z = 90.0
+#ROTATE_X = 45.0
+#ROTATE_Y = 30.0
+#ROTATE_Z = 90.0
 
 # Scale parameters
-SCALE_X = 1.5
-SCALE_Y = 2.0
-SCALE_Z = 0.8
+#SCALE_X = 1.5
+#SCALE_Y = 2.0
+#SCALE_Z = 0.8
 
 # Server configuration
 SERVER_HOST = "localhost"

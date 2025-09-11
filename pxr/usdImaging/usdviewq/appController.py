@@ -280,6 +280,9 @@ class AppController(QtCore.QObject):
     ###########
     # Signals #
     ###########
+    
+    # Signal for requesting prim selection from external threads
+    selectPrimByPathRequested = QtCore.Signal(str)
 
     @classmethod
     def clearSettings(cls):
@@ -822,6 +825,9 @@ class AppController(QtCore.QObject):
             # above indicate this is still be an issue in newer PySide releases.
             primViewSelModel = self._ui.primView.selectionModel()
             primViewSelModel.selectionChanged.connect(self._selectionChanged)
+
+            # Connect our custom signal for thread-safe prim selection
+            self.selectPrimByPathRequested.connect(self.selectPrimByPath)
 
             self._ui.primView.itemClicked.connect(self._itemClicked)
             self._ui.primView.itemPressed.connect(self._itemPressed)
@@ -3577,6 +3583,58 @@ class AppController(QtCore.QObject):
     def selectPseudoroot(self):
         """Selects only the pseudoroot."""
         self._dataModel.selection.clearPrims()
+
+    def selectPrimByPath(self, primPath):
+        """Select a prim by its SdfPath and make it visible in the primView.
+        
+        Args:
+            primPath: An SdfPath or string representation of the prim path
+        
+        Returns:
+            bool: True if the prim was successfully selected, False otherwise
+        """
+        try:
+            # Convert to SdfPath if necessary
+            if isinstance(primPath, str):
+                primPath = Sdf.Path(primPath)
+            elif not isinstance(primPath, Sdf.Path):
+                return False
+            
+            # Validate that the path is a valid prim path
+            if not primPath.IsPrimPath():
+                return False
+            
+            # Check if the prim exists in the stage
+            prim = self._dataModel.stage.GetPrimAtPath(primPath)
+            if not prim or not prim.IsValid():
+                return False
+            
+            # Get the corresponding tree widget item, expanding parents if necessary
+            item = self._getItemAtPath(primPath, ensureExpanded=True)
+            if not item:
+                return False
+            
+            # Clear current selection and select the new prim
+            self._dataModel.selection.setPrimPath(primPath)
+            
+            # Prevent view updates during selection change to avoid flickering
+            # (similar to _resetView implementation)
+            self._allowViewUpdates = False
+            
+            # Set the item as current in the primView tree
+            self._ui.primView.setCurrentItem(item)
+            
+            # Re-enable view updates
+            self._allowViewUpdates = True
+            
+            # Ensure the item is visible by scrolling to it
+            self._ui.primView.scrollToItem(item)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error selecting prim by path {primPath}: {e}")
+            return False
 
     def selectEnclosingModel(self):
         """Iterates through all selected prims, selecting their containing model

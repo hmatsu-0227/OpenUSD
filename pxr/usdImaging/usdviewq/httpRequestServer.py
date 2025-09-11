@@ -26,15 +26,16 @@ import traceback
 from pxr import Usd, UsdGeom, Sdf, Gf, Tf
 
 try:
-    from PySide6 import QtCore
+    from PySide6 import QtCore, QtWidgets
 except ImportError:
     try:
-        from PySide2 import QtCore
+        from PySide2 import QtCore, QtWidgets
     except ImportError:
         try:
-            from PyQt5 import QtCore
+            from PyQt5 import QtCore, QtWidgets
         except ImportError:
             QtCore = None
+            QtWidgets = None
 
 
 class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -162,6 +163,42 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
             success, message = self._move_prim(prim_path, x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z)
             
             if success:
+                # Select the prim that was moved
+                if self.app_controller and hasattr(self.app_controller, 'selectPrimByPath'):
+                    try:
+                        # Use QApplication to execute in main thread
+                        if QtCore and QtWidgets:
+                            # Get the QApplication instance
+                            app = QtWidgets.QApplication.instance()
+                            if app:
+                                # Create a callable wrapper for the selection method
+                                def select_prim_wrapper():
+                                    try:
+                                        return self.app_controller.selectPrimByPath(prim_path)
+                                    except Exception as e:
+                                        print(f"Warning: Could not select prim {prim_path}: {e}")
+                                        return False
+                                
+                                # Execute immediately if we're in the main thread
+                                if QtCore.QThread.currentThread() == app.thread():
+                                    select_prim_wrapper()
+                                else:
+                                    # Use signal emission for thread-safe execution
+                                    try:
+                                        # Emit the signal to trigger selectPrimByPath in the main thread
+                                        self.app_controller.selectPrimByPathRequested.emit(str(prim_path))
+                                    except Exception as e:
+                                        print(f"Warning: Signal emission failed: {e}")
+                                        # Fallback to direct call
+                                        select_prim_wrapper()
+                            else:
+                                self.app_controller.selectPrimByPath(prim_path)
+                        else:
+                            # Fallback if Qt is not available
+                            self.app_controller.selectPrimByPath(prim_path)
+                    except Exception as e:
+                        print(f"Warning: Could not select prim {prim_path}: {e}")
+                
                 self._send_success({
                     "message": message,
                     "prim_path": str(prim_path),
@@ -537,13 +574,7 @@ class USDViewerHTTPRequestHandler(BaseHTTPRequestHandler):
                 # Always set as Vec3f for consistency with USD schema
                 scale_op.Set(Gf.Vec3f(scale_x, scale_y, scale_z))
             
-            # Refresh the viewer if app_controller is available
-            if self.app_controller:
-                try:
-                    # Trigger a refresh of the viewer
-                    self.app_controller.updateGUI()
-                except Exception as e:
-                    print(f"Warning: Could not refresh GUI: {e}")
+            # Note: GUI refresh is handled by the prim selection mechanism
             
             return True, f"Successfully updated prim {prim_path} - translation: ({x}, {y}, {z}), rotation: ({rotate_x}, {rotate_y}, {rotate_z}), scale: ({scale_x}, {scale_y}, {scale_z})"
             
